@@ -81,6 +81,9 @@ final class FileStackController: ObservableObject {
         viewMode = mode
         defaults.set(mode.rawValue, forKey: viewModeKey)
         updateSelectionForCurrentFolder()
+        if mode == .icon {
+            prefetchThumbnails(for: selectedFiles)
+        }
     }
 
     func setPreviewScale(_ scale: Double) {
@@ -88,6 +91,7 @@ final class FileStackController: ObservableObject {
         guard previewScale != clamped else { return }
         previewScale = clamped
         defaults.set(clamped, forKey: previewScaleKey)
+        prefetchThumbnails(for: selectedFiles)
     }
 
     func clearAlert() {
@@ -222,11 +226,23 @@ final class FileStackController: ObservableObject {
 
     private func prefetchThumbnails(for files: [FileItem]) {
         guard viewMode == .icon else { return }
-        let height = min(max(120 * previewScale, 96), 320)
-        let width = min(max(height * 1.6, 140), 520)
-        let size = CGSize(width: width, height: height)
+        let size = tileSizeForCurrentScale()
         let urls = files.prefix(20).map { $0.url }
         ThumbnailCache.shared.prefetch(urls: urls, size: size)
+    }
+
+    private func tileSizeForCurrentScale() -> CGSize {
+        let contentWidth: CGFloat = 360 - 32
+        let spacing: CGFloat = 12
+        var targetWidth = 150 * previewScale
+        targetWidth = min(max(targetWidth, 90), 220)
+
+        var columnCount = Int((contentWidth + spacing) / (targetWidth + spacing))
+        columnCount = max(min(columnCount, 4), 1)
+
+        let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+        let height = max(width * 0.75, 70)
+        return CGSize(width: width, height: height)
     }
 
     private func detectScreenshotFolder() -> URL? {

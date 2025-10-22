@@ -144,30 +144,15 @@ struct ContentView: View {
         }
     }
 
-    private func iconGridColumns(scale: Double) -> [GridItem] {
-        return [
-            GridItem(.flexible(minimum: 160, maximum: 200), spacing: 12),
-            GridItem(.flexible(minimum: 160, maximum: 200), spacing: 12)
-        ]
-    }
-
-    private func iconTileHeight(scale: Double) -> CGFloat {
-        let minHeight: CGFloat = 80
-        let maxHeight: CGFloat = 320
-        let baseHeight: CGFloat = 120 * scale
-        return min(max(baseHeight, minHeight), maxHeight)
-    }
-
     private var iconGridView: some View {
-        let columns = iconGridColumns(scale: controller.previewScale)
-        let tileHeight = iconTileHeight(scale: controller.previewScale)
+        let metrics = iconGridMetrics(for: controller.previewScale)
         return ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: metrics.columns, spacing: 12) {
                 ForEach(controller.selectedFiles) { file in
                     FilePreviewTile(
                         file: file,
                         isSelected: controller.selectedFile?.id == file.id,
-                        thumbnailHeight: tileHeight,
+                        thumbnailSize: metrics.tileSize,
                         onSelect: {
                             controller.selectFile(file)
                         },
@@ -190,6 +175,24 @@ struct ContentView: View {
             }
             .padding(.vertical, 4)
         }
+    }
+
+    private func iconGridMetrics(for scale: Double) -> IconGridMetrics {
+        let contentWidth: CGFloat = 360 - 32 // 팝오버 폭 360, 좌우 패딩 16씩
+        let spacing: CGFloat = 12
+        let minWidth: CGFloat = 90
+        let maxWidth: CGFloat = 220
+        var targetWidth = 150 * scale
+        targetWidth = min(max(targetWidth, minWidth), maxWidth)
+
+        var columnCount = Int((contentWidth + spacing) / (targetWidth + spacing))
+        columnCount = max(min(columnCount, 4), 1)
+
+        let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+        let height = max(width * 0.75, 70)
+
+        let columns = Array(repeating: GridItem(.flexible(minimum: width, maximum: width), spacing: spacing), count: columnCount)
+        return IconGridMetrics(columns: columns, tileSize: CGSize(width: width, height: height))
     }
 
     private var listView: some View {
@@ -297,16 +300,21 @@ private extension ContentView {
     }
 }
 
+private struct IconGridMetrics {
+    let columns: [GridItem]
+    let tileSize: CGSize
+}
+
 private struct FilePreviewTile: View {
     let file: FileItem
     let isSelected: Bool
-    let thumbnailHeight: CGFloat
+    let thumbnailSize: CGSize
     let onSelect: () -> Void
     let onOpen: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            FileThumbnailView(file: file, height: thumbnailHeight)
+            FileThumbnailView(file: file, size: thumbnailSize)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(file.displayName)
@@ -357,48 +365,50 @@ private struct FilePreviewTile: View {
 
 private struct FileThumbnailView: View {
     let file: FileItem
-    let height: CGFloat
+    let size: CGSize
     @StateObject private var loader: ThumbnailLoader
 
-    init(file: FileItem, height: CGFloat) {
+    init(file: FileItem, size: CGSize) {
         self.file = file
-        self.height = height
+        self.size = size
         _loader = StateObject(wrappedValue: ThumbnailLoader(file: file))
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                placeholderBackground
+        ZStack {
+            placeholderBackground
 
-                if let image = loader.image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
-                } else {
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(placeholderLabel)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                }
+            if let image = loader.image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+            } else {
+                placeholderView
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .frame(height: height)
+        .frame(width: size.width, height: size.height)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .task(id: loaderKey) {
-            await loader.ensureLoaded(targetSize: targetSize)
+            await loader.ensureLoaded(targetSize: size)
         }
     }
 
     private var placeholderBackground: some View {
         RoundedRectangle(cornerRadius: 10)
             .fill(Color(NSColor.controlAccentColor).opacity(0.08))
+    }
+
+    private var placeholderView: some View {
+        VStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text(placeholderLabel)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(width: size.width, height: size.height)
     }
 
     private var placeholderLabel: String {
@@ -412,14 +422,8 @@ private struct FileThumbnailView: View {
         return file.url.pathExtension.uppercased().isEmpty ? "파일" : file.url.pathExtension.uppercased()
     }
 
-    private var targetSize: CGSize {
-        let clampedHeight = min(max(height, 96), 320)
-        let width = min(max(clampedHeight * 1.6, 140), 520)
-        return CGSize(width: width, height: clampedHeight)
-    }
-
     private var loaderKey: String {
-        file.id + "|" + String(Int(height))
+        file.id + "|" + String(Int(size.width)) + "x" + String(Int(size.height))
     }
 }
 
