@@ -139,13 +139,9 @@ struct ContentView: View {
     }
 
     private func iconGridColumns(scale: Double) -> [GridItem] {
-        let minWidth: CGFloat = 90
-        let maxWidth: CGFloat = 320
-        let baseWidth: CGFloat = 170 * scale
-        let adjusted = min(max(baseWidth, minWidth), maxWidth)
         return [
-            GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12),
-            GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12)
+            GridItem(.flexible(minimum: 160, maximum: 200), spacing: 12),
+            GridItem(.flexible(minimum: 160, maximum: 200), spacing: 12)
         ]
     }
 
