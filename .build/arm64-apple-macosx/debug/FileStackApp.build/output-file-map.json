@@ -1,0 +1,40 @@
+{
+  "": {
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/master.swiftdeps"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/ContentView.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView.dia"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/DirectoryWatcher.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.dia"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.dia"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.dia"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.dia"
+  }
+}
