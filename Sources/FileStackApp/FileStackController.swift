@@ -1,5 +1,6 @@
 import Foundation
 import os.log
+import CoreGraphics
 
 final class FileStackController: ObservableObject {
     @Published private(set) var folders: [WatchedFolder] = []
@@ -194,6 +195,8 @@ final class FileStackController: ObservableObject {
                 selectedFileID = files.first?.id
             }
         }
+
+        prefetchThumbnails(for: folder.files)
     }
 
     private func saveFolders() {
@@ -213,6 +216,17 @@ final class FileStackController: ObservableObject {
         }
 
         selectedFileID = files.first?.id
+
+        prefetchThumbnails(for: files)
+    }
+
+    private func prefetchThumbnails(for files: [FileItem]) {
+        guard viewMode == .icon else { return }
+        let height = min(max(120 * previewScale, 96), 320)
+        let width = min(max(height * 1.6, 140), 520)
+        let size = CGSize(width: width, height: height)
+        let urls = files.prefix(20).map { $0.url }
+        ThumbnailCache.shared.prefetch(urls: urls, size: size)
     }
 
     private func detectScreenshotFolder() -> URL? {

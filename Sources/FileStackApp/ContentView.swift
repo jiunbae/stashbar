@@ -68,10 +68,27 @@ struct ContentView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("File Stack")
-                    .font(.headline)
+            HStack(spacing: 12) {
+                if controller.folders.isEmpty {
+                    Text("감시할 폴더를 추가하세요")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if let selected = controller.selectedFolder {
+                    Picker("폴더", selection: Binding(
+                        get: { controller.selectedFolderID ?? selected.id },
+                        set: { controller.selectedFolderID = $0 }
+                    )) {
+                        ForEach(controller.folders) { folder in
+                            Text(folder.displayName)
+                                .tag(folder.id as UUID?)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 220)
+                }
+
                 Spacer()
+
                 Picker("보기", selection: viewModeBinding) {
                     ForEach(FileViewMode.allCases) { mode in
                         Image(systemName: mode.systemImageName)
@@ -84,28 +101,15 @@ struct ContentView: View {
             }
 
             if controller.folders.isEmpty {
-                Text("상단의 버튼을 눌러 감시할 폴더를 등록하세요. 기본으로 스크린샷 폴더를 탐색합니다.")
+                Text("상단 아이콘을 눌러 폴더를 등록하면 파일을 바로 모아볼 수 있습니다.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if let selected = controller.selectedFolder {
-                VStack(alignment: .leading, spacing: 4) {
-                    Picker("폴더", selection: Binding(
-                        get: { controller.selectedFolderID ?? selected.id },
-                        set: { controller.selectedFolderID = $0 }
-                    )) {
-                        ForEach(controller.folders) { folder in
-                            Text(folder.displayName)
-                                .tag(folder.id as UUID?)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    Text(selected.url.path)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
+                Text(selected.url.path)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
         }
     }
