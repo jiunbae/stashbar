@@ -56,6 +56,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift"
         },
         {
@@ -79,6 +83,7 @@
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swift.o",
+        "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailLoader.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -160,6 +165,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailLoader.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.swift.o"
         },
         {
@@ -177,6 +186,7 @@
         "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift",
+        "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift"
       ],
       "tempsPath" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build",
@@ -202,6 +212,7 @@
       "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift",
+      "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift",
       "-I",
       "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/Modules",
@@ -322,6 +333,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift"
         }
       ],
@@ -365,6 +380,10 @@
         {
           "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailLoader.swift.o"
         },
         {
           "kind" : "file",

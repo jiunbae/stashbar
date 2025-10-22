@@ -5,15 +5,17 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @ObservedObject var controller: FileStackController
     @State private var presentingFolderImporter = false
-    private let gridColumns: [GridItem] = [
-        GridItem(.flexible(minimum: 140, maximum: 200), spacing: 12),
-        GridItem(.flexible(minimum: 140, maximum: 200), spacing: 12)
-    ]
-
     private var viewModeBinding: Binding<FileViewMode> {
         Binding(
             get: { controller.viewMode },
             set: { controller.setViewMode($0) }
+        )
+    }
+
+    private var iconScaleBinding: Binding<Double> {
+        Binding(
+            get: { controller.previewScale },
+            set: { controller.setPreviewScale($0) }
         )
     }
 
@@ -104,6 +106,17 @@ struct ContentView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
+
+                if controller.viewMode == .icon {
+                    HStack(spacing: 8) {
+                        Label("아이콘 크기", systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.caption)
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.secondary)
+                        Slider(value: iconScaleBinding, in: 0.7...1.4)
+                            .frame(maxWidth: 140)
+                    }
+                }
             }
         }
     }
@@ -136,13 +149,29 @@ struct ContentView: View {
         }
     }
 
+    private func iconGridColumns(scale: Double) -> [GridItem] {
+        let base: CGFloat = 140
+        let adjusted = max(base * scale, 110)
+        return [
+            GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12),
+            GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12)
+        ]
+    }
+
+    private func iconTileHeight(scale: Double) -> CGFloat {
+        max(110 * scale, 90)
+    }
+
     private var iconGridView: some View {
-        ScrollView {
-            LazyVGrid(columns: gridColumns, spacing: 12) {
+        let columns = iconGridColumns(scale: controller.previewScale)
+        let tileHeight = iconTileHeight(scale: controller.previewScale)
+        return ScrollView {
+            LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(controller.selectedFiles) { file in
                     FilePreviewTile(
                         file: file,
                         isSelected: controller.selectedFile?.id == file.id,
+                        thumbnailHeight: tileHeight,
                         onSelect: {
                             controller.selectFile(file)
                         },
@@ -174,6 +203,7 @@ struct ContentView: View {
                     FileListRow(
                         file: file,
                         isSelected: controller.selectedFile?.id == file.id,
+                        iconSize: CGSize(width: 28, height: 28),
                         onSelect: {
                             controller.selectFile(file)
                         },
@@ -250,13 +280,13 @@ struct ContentView: View {
 private struct FilePreviewTile: View {
     let file: FileItem
     let isSelected: Bool
+    let thumbnailHeight: CGFloat
     let onSelect: () -> Void
     let onOpen: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            FileThumbnailView(file: file)
-                .frame(height: 140)
+            FileThumbnailView(file: file, height: thumbnailHeight)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(file.displayName)
@@ -307,17 +337,22 @@ private struct FilePreviewTile: View {
 
 private struct FileThumbnailView: View {
     let file: FileItem
-    @State private var thumbnail: NSImage?
+    let height: CGFloat
+    @StateObject private var loader: ThumbnailLoader
 
-    private let targetSize = CGSize(width: 320, height: 240)
+    init(file: FileItem, height: CGFloat) {
+        self.file = file
+        self.height = height
+        _loader = StateObject(wrappedValue: ThumbnailLoader(file: file))
+    }
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
                 placeholderBackground
 
-                if let thumbnail {
-                    Image(nsImage: thumbnail)
+                if let image = loader.image {
+                    Image(nsImage: image)
                         .resizable()
                         .scaledToFill()
                         .frame(width: proxy.size.width, height: proxy.size.height)
@@ -335,8 +370,9 @@ private struct FileThumbnailView: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .task(id: file.id) {
-            await loadThumbnailIfNeeded()
+        .frame(height: height)
+        .task(id: loaderKey) {
+            await loader.ensureLoaded(targetSize: targetSize)
         }
     }
 
@@ -356,36 +392,21 @@ private struct FileThumbnailView: View {
         return file.url.pathExtension.uppercased().isEmpty ? "파일" : file.url.pathExtension.uppercased()
     }
 
-    private func loadThumbnailIfNeeded() async {
-        if thumbnail != nil {
-            return
-        }
+    private var targetSize: CGSize {
+        let width = max(height * 1.6, 120)
+        let clampedHeight = max(height, 96)
+        return CGSize(width: width, height: clampedHeight)
+    }
 
-        if file.isDirectory {
-            await MainActor.run {
-                let icon = FileIconCache.shared.icon(for: file.url, size: targetSize)
-                thumbnail = icon
-            }
-            return
-        }
-
-        if let cached = ThumbnailCache.shared.image(for: file.url) {
-            await MainActor.run {
-                thumbnail = cached
-            }
-            return
-        }
-
-        let image = await ThumbnailCache.shared.loadThumbnail(for: file.url, size: targetSize)
-        await MainActor.run {
-            thumbnail = image
-        }
+    private var loaderKey: String {
+        file.id + "|" + String(Int(height))
     }
 }
 
 private struct FileListRow: View {
     let file: FileItem
     let isSelected: Bool
+    let iconSize: CGSize
     let onSelect: () -> Void
     let onOpen: () -> Void
 
@@ -445,7 +466,6 @@ private struct FileListRow: View {
             )
     }
 
-    private var iconSize: CGSize { CGSize(width: 28, height: 28) }
 }
 
 private struct HierarchyBrowser: View {

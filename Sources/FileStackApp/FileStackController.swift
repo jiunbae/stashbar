@@ -7,6 +7,7 @@ final class FileStackController: ObservableObject {
     @Published var selectedFileID: String?
     @Published var alertMessage: String?
     @Published var viewMode: FileViewMode
+    @Published var previewScale: Double
 
     var selectedFolder: WatchedFolder? {
         guard let selectedFolderID else {
@@ -35,6 +36,7 @@ final class FileStackController: ObservableObject {
     private let log = Logger(subsystem: "com.file-stack.app", category: "controller")
     private let fileManager = FileManager.default
     private let viewModeKey = "ViewModePreference"
+    private let previewScaleKey = "PreviewScalePreference"
 
     init() {
         if let rawValue = defaults.string(forKey: viewModeKey),
@@ -43,6 +45,10 @@ final class FileStackController: ObservableObject {
         } else {
             viewMode = .icon
         }
+
+        let storedScale = defaults.double(forKey: previewScaleKey)
+        previewScale = storedScale > 0 ? storedScale : 1.0
+
         loadPersistedFolders()
     }
 
@@ -73,6 +79,13 @@ final class FileStackController: ObservableObject {
         viewMode = mode
         defaults.set(mode.rawValue, forKey: viewModeKey)
         updateSelectionForCurrentFolder()
+    }
+
+    func setPreviewScale(_ scale: Double) {
+        let clamped = min(max(scale, 0.6), 1.6)
+        guard previewScale != clamped else { return }
+        previewScale = clamped
+        defaults.set(clamped, forKey: previewScaleKey)
     }
 
     func clearAlert() {
