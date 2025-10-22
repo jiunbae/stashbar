@@ -106,17 +106,6 @@ struct ContentView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-
-                if controller.viewMode == .icon {
-                    HStack(spacing: 8) {
-                        Label("아이콘 크기", systemImage: "arrow.up.left.and.arrow.down.right")
-                            .font(.caption)
-                            .labelStyle(.titleAndIcon)
-                            .foregroundStyle(.secondary)
-                        Slider(value: iconScaleBinding, in: 0.7...1.4)
-                            .frame(maxWidth: 140)
-                    }
-                }
             }
         }
     }
@@ -150,8 +139,10 @@ struct ContentView: View {
     }
 
     private func iconGridColumns(scale: Double) -> [GridItem] {
-        let base: CGFloat = 140
-        let adjusted = max(base * scale, 110)
+        let minWidth: CGFloat = 90
+        let maxWidth: CGFloat = 320
+        let baseWidth: CGFloat = 170 * scale
+        let adjusted = min(max(baseWidth, minWidth), maxWidth)
         return [
             GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12),
             GridItem(.flexible(minimum: adjusted, maximum: adjusted + 60), spacing: 12)
@@ -159,7 +150,10 @@ struct ContentView: View {
     }
 
     private func iconTileHeight(scale: Double) -> CGFloat {
-        max(110 * scale, 90)
+        let minHeight: CGFloat = 80
+        let maxHeight: CGFloat = 320
+        let baseHeight: CGFloat = 120 * scale
+        return min(max(baseHeight, minHeight), maxHeight)
     }
 
     private var iconGridView: some View {
@@ -250,9 +244,11 @@ struct ContentView: View {
             Button {
                 presentingFolderImporter = true
             } label: {
-                Label("폴더 추가", systemImage: "plus")
+                Label("폴더 추가", systemImage: "folder.badge.plus")
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
+            .help("폴더 추가")
 
             if let folder = controller.selectedFolder {
                 Button(role: .destructive) {
@@ -260,18 +256,33 @@ struct ContentView: View {
                 } label: {
                     Label("폴더 삭제", systemImage: "trash")
                 }
+                .labelStyle(.iconOnly)
                 .buttonStyle(.bordered)
                 .disabled(controller.folders.count <= 1)
+                .help("폴더 삭제")
             }
-
-            Spacer()
 
             Button {
                 controller.refreshSelectedFolder()
             } label: {
                 Label("새로 고침", systemImage: "arrow.clockwise")
             }
+            .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
+            .help("새로 고침")
+
+            if controller.viewMode == .icon {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .foregroundStyle(.secondary)
+                    Slider(value: iconScaleBinding, in: 0.4...1.8)
+                        .frame(maxWidth: 150)
+                        .help("아이콘 크기 조절")
+                }
+                .frame(maxWidth: 200)
+            }
+
+            Spacer()
         }
         .font(.caption)
     }
@@ -393,8 +404,8 @@ private struct FileThumbnailView: View {
     }
 
     private var targetSize: CGSize {
-        let width = max(height * 1.6, 120)
-        let clampedHeight = max(height, 96)
+        let clampedHeight = min(max(height, 96), 320)
+        let width = min(max(clampedHeight * 1.6, 140), 520)
         return CGSize(width: width, height: clampedHeight)
     }
 

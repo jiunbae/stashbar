@@ -37,6 +37,7 @@ final class FileStackController: ObservableObject {
     private let fileManager = FileManager.default
     private let viewModeKey = "ViewModePreference"
     private let previewScaleKey = "PreviewScalePreference"
+    private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
 
     init() {
         if let rawValue = defaults.string(forKey: viewModeKey),
@@ -47,7 +48,7 @@ final class FileStackController: ObservableObject {
         }
 
         let storedScale = defaults.double(forKey: previewScaleKey)
-        previewScale = storedScale > 0 ? storedScale : 1.0
+        previewScale = previewScaleRange.contains(storedScale) ? storedScale : 1.0
 
         loadPersistedFolders()
     }
@@ -82,7 +83,7 @@ final class FileStackController: ObservableObject {
     }
 
     func setPreviewScale(_ scale: Double) {
-        let clamped = min(max(scale, 0.6), 1.6)
+        let clamped = min(max(scale, previewScaleRange.lowerBound), previewScaleRange.upperBound)
         guard previewScale != clamped else { return }
         previewScale = clamped
         defaults.set(clamped, forKey: previewScaleKey)
