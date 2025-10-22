@@ -273,20 +273,27 @@ struct ContentView: View {
             .buttonStyle(.bordered)
             .help("새로 고침")
 
-            if controller.viewMode == .icon {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .foregroundStyle(.secondary)
-                    Slider(value: iconScaleBinding, in: 0.4...1.8)
-                        .frame(maxWidth: 150)
-                        .help("아이콘 크기 조절")
-                }
-                .frame(maxWidth: 200)
-            }
+            iconScaleControl
 
             Spacer()
         }
         .font(.caption)
+    }
+}
+
+private extension ContentView {
+    var iconScaleControl: some View {
+        let controlWidth: CGFloat = 200
+        return HStack(spacing: 6) {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .foregroundStyle(.secondary)
+            Slider(value: iconScaleBinding, in: 0.4...1.8)
+                .frame(maxWidth: 150)
+                .help("아이콘 크기 조절")
+        }
+        .frame(width: controlWidth)
+        .opacity(controller.viewMode == .icon ? 1 : 0)
+        .allowsHitTesting(controller.viewMode == .icon)
     }
 }
 
