@@ -41,12 +41,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPopover(sender: Any?) {
         guard let button = statusItem.button else { return }
         popover.contentViewController = NSHostingController(rootView: ContentView(controller: controller))
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        positionPopover(relativeTo: button)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     private func closePopover(sender: Any?) {
         popover.performClose(sender)
+    }
+
+    private func positionPopover(relativeTo button: NSStatusBarButton) {
+        guard
+            let popoverWindow = popover.contentViewController?.view.window,
+            let buttonWindow = button.window,
+            let screen = buttonWindow.screen
+        else {
+            return
+        }
+
+        let buttonBoundsInWindow = button.convert(button.bounds, to: nil)
+        let buttonRectOnScreen = buttonWindow.convertToScreen(buttonBoundsInWindow)
+        var frame = popoverWindow.frame
+        let visibleFrame = screen.visibleFrame
+
+        frame.origin.x = buttonRectOnScreen.midX - frame.width / 2
+        frame.origin.y = buttonRectOnScreen.minY - frame.height - 8
+
+        if frame.origin.x < visibleFrame.minX {
+            frame.origin.x = visibleFrame.minX
+        }
+        if frame.maxX > visibleFrame.maxX {
+            frame.origin.x = visibleFrame.maxX - frame.width
+        }
+        if frame.origin.y < visibleFrame.minY {
+            frame.origin.y = visibleFrame.minY
+        }
+
+        popoverWindow.setFrame(frame, display: true)
     }
 }
 
