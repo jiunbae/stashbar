@@ -233,15 +233,16 @@ final class FileStackController: ObservableObject {
 
     private func tileSizeForCurrentScale() -> CGSize {
         let contentWidth: CGFloat = 360 - 32
-        let spacing: CGFloat = 12
+        let spacing: CGFloat = 10
+        let maxColumns = 5
         var targetWidth = 150 * previewScale
-        targetWidth = min(max(targetWidth, 90), 220)
+        targetWidth = min(max(targetWidth, 50), 200)
 
         var columnCount = Int((contentWidth + spacing) / (targetWidth + spacing))
-        columnCount = max(min(columnCount, 4), 1)
+        columnCount = max(1, min(maxColumns, columnCount))
 
         let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        let height = max(width * 0.75, 70)
+        let height = max(width * 0.75, 60)
         return CGSize(width: width, height: height)
     }
 

@@ -179,17 +179,19 @@ struct ContentView: View {
 
     private func iconGridMetrics(for scale: Double) -> IconGridMetrics {
         let contentWidth: CGFloat = 360 - 32 // 팝오버 폭 360, 좌우 패딩 16씩
-        let spacing: CGFloat = 12
-        let minWidth: CGFloat = 90
-        let maxWidth: CGFloat = 220
+        let spacing: CGFloat = 10
+        let minWidth: CGFloat = 50
+        let maxWidth: CGFloat = 200
+        let maxColumns = 5
+
         var targetWidth = 150 * scale
         targetWidth = min(max(targetWidth, minWidth), maxWidth)
 
         var columnCount = Int((contentWidth + spacing) / (targetWidth + spacing))
-        columnCount = max(min(columnCount, 4), 1)
+        columnCount = max(1, min(maxColumns, columnCount))
 
         let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        let height = max(width * 0.75, 70)
+        let height = max(width * 0.75, 60)
 
         let columns = Array(repeating: GridItem(.flexible(minimum: width, maximum: width), spacing: spacing), count: columnCount)
         return IconGridMetrics(columns: columns, tileSize: CGSize(width: width, height: height))
