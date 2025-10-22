@@ -16,6 +16,13 @@
     "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.swiftdeps",
     "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.dia"
   },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/FileIconCache.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.dia"
+  },
   "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift": {
     "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.d",
     "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swift.o",

@@ -363,8 +363,7 @@ private struct FileThumbnailView: View {
 
         if file.isDirectory {
             await MainActor.run {
-                let icon = NSWorkspace.shared.icon(forFile: file.url.path)
-                icon.size = NSSize(width: targetSize.width, height: targetSize.height)
+                let icon = FileIconCache.shared.icon(for: file.url, size: targetSize)
                 thumbnail = icon
             }
             return
@@ -392,10 +391,10 @@ private struct FileListRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: file.url.path))
+            Image(nsImage: FileIconCache.shared.icon(for: file.url, size: iconSize))
                 .resizable()
                 .scaledToFit()
-                .frame(width: 28, height: 28)
+                .frame(width: iconSize.width, height: iconSize.height)
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -445,6 +444,8 @@ private struct FileListRow: View {
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
     }
+
+    private var iconSize: CGSize { CGSize(width: 28, height: 28) }
 }
 
 private struct HierarchyBrowser: View {
@@ -544,10 +545,10 @@ private struct FileHierarchyRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: entry.file.url.path))
+            Image(nsImage: FileIconCache.shared.icon(for: entry.file.url, size: iconSize))
                 .resizable()
                 .scaledToFit()
-                .frame(width: 20, height: 20)
+                .frame(width: iconSize.width, height: iconSize.height)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.file.displayName)
@@ -587,6 +588,8 @@ private struct FileHierarchyRow: View {
         }
         return entry.file.relativeDateDescription
     }
+
+    private var iconSize: CGSize { CGSize(width: 20, height: 20) }
 }
 
 private let fileSizeFormatter: ByteCountFormatter = {

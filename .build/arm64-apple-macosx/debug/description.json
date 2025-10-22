@@ -32,6 +32,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/FileIconCache.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift"
         },
         {
@@ -69,6 +73,7 @@
       "objects" : [
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ContentView.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.swift.o",
+        "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swift.o",
@@ -97,7 +102,6 @@
         "-entry-point-function-name",
         "-Xfrontend",
         "FileStackApp_main",
-        "-color-diagnostics",
         "-swift-version",
         "5",
         "-I",
@@ -132,6 +136,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swift.o"
         },
         {
@@ -163,6 +171,7 @@
       "sources" : [
         "/Users/june/workspace/file-stack/Sources/FileStackApp/ContentView.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/DirectoryWatcher.swift",
+        "/Users/june/workspace/file-stack/Sources/FileStackApp/FileIconCache.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/FileTreeBuilder.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
@@ -187,6 +196,7 @@
       "-c",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/ContentView.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/DirectoryWatcher.swift",
+      "/Users/june/workspace/file-stack/Sources/FileStackApp/FileIconCache.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/FileTreeBuilder.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
@@ -215,7 +225,6 @@
       "-entry-point-function-name",
       "-Xfrontend",
       "FileStackApp_main",
-      "-color-diagnostics",
       "-swift-version",
       "5",
       "-I",
@@ -289,6 +298,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/FileIconCache.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/FileStackController.swift"
         },
         {
@@ -328,6 +341,10 @@
         {
           "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/DirectoryWatcher.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileIconCache.swift.o"
         },
         {
           "kind" : "file",

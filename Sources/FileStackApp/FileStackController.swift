@@ -64,6 +64,7 @@ final class FileStackController: ObservableObject {
     }
 
     func selectFile(_ file: FileItem) {
+        guard selectedFileID != file.id else { return }
         selectedFileID = file.id
     }
 
