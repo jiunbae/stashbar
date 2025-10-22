@@ -23,6 +23,13 @@
     "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swiftdeps",
     "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.dia"
   },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/FileTreeBuilder.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.dia"
+  },
   "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift": {
     "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.d",
     "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swift.o",

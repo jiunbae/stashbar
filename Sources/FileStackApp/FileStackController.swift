@@ -6,6 +6,7 @@ final class FileStackController: ObservableObject {
     @Published var selectedFolderID: UUID?
     @Published var selectedFileID: String?
     @Published var alertMessage: String?
+    @Published var viewMode: FileViewMode
 
     var selectedFolder: WatchedFolder? {
         guard let selectedFolderID else {
@@ -33,8 +34,15 @@ final class FileStackController: ObservableObject {
     private let workerQueue = DispatchQueue(label: "com.file-stack.controller.files", qos: .userInitiated)
     private let log = Logger(subsystem: "com.file-stack.app", category: "controller")
     private let fileManager = FileManager.default
+    private let viewModeKey = "ViewModePreference"
 
     init() {
+        if let rawValue = defaults.string(forKey: viewModeKey),
+           let mode = FileViewMode(rawValue: rawValue) {
+            viewMode = mode
+        } else {
+            viewMode = .icon
+        }
         loadPersistedFolders()
     }
 
@@ -57,6 +65,13 @@ final class FileStackController: ObservableObject {
 
     func selectFile(_ file: FileItem) {
         selectedFileID = file.id
+    }
+
+    func setViewMode(_ mode: FileViewMode) {
+        guard viewMode != mode else { return }
+        viewMode = mode
+        defaults.set(mode.rawValue, forKey: viewModeKey)
+        updateSelectionForCurrentFolder()
     }
 
     func clearAlert() {
@@ -230,33 +245,21 @@ final class FileStackController: ObservableObject {
             return []
         }
 
-        let fileEntries: [(URL, URLResourceValues)] = urls.compactMap { url in
-            guard let values = try? url.resourceValues(forKeys: resourceKeys),
-                  values.isDirectory != true else {
+        let entries: [(URL, URLResourceValues)] = urls.compactMap { url in
+            guard let values = try? url.resourceValues(forKeys: resourceKeys) else {
                 return nil
             }
             return (url, values)
         }
 
-        let sorted = fileEntries.sorted { lhs, rhs in
+        let sorted = entries.sorted { lhs, rhs in
             let lhsDate = lhs.1.contentModificationDate ?? .distantPast
             let rhsDate = rhs.1.contentModificationDate ?? .distantPast
             return lhsDate > rhsDate
         }
 
         return sorted.prefix(limit).map { entry in
-            let url = entry.0
-            let values = entry.1
-            let displayName = values.localizedName ?? url.lastPathComponent
-            let modificationDate = values.contentModificationDate
-            let fileSize = values.fileSize.map(Int64.init)
-            return FileItem(
-                url: url,
-                displayName: displayName,
-                modificationDate: modificationDate,
-                fileSize: fileSize,
-                typeIdentifier: values.typeIdentifier
-            )
+            FileItem(url: entry.0, values: entry.1)
         }
     }
 }
