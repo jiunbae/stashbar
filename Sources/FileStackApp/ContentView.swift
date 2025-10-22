@@ -74,6 +74,8 @@ struct ContentView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else if let selected = controller.selectedFolder {
+                    Image(systemName: "folder.fill")
+                        .foregroundStyle(.secondary)
                     Picker("폴더", selection: Binding(
                         get: { controller.selectedFolderID ?? selected.id },
                         set: { controller.selectedFolderID = $0 }
@@ -89,7 +91,7 @@ struct ContentView: View {
 
                 Spacer()
 
-                Picker("보기", selection: viewModeBinding) {
+                Picker("", selection: viewModeBinding) {
                     ForEach(FileViewMode.allCases) { mode in
                         Image(systemName: mode.systemImageName)
                             .tag(mode)
