@@ -4,6 +4,7 @@ import os.log
 final class FileStackController: ObservableObject {
     @Published private(set) var folders: [WatchedFolder] = []
     @Published var selectedFolderID: UUID?
+    @Published var selectedFileID: String?
     @Published var alertMessage: String?
 
     var selectedFolder: WatchedFolder? {
@@ -15,6 +16,14 @@ final class FileStackController: ObservableObject {
 
     var selectedFiles: [FileItem] {
         selectedFolder?.files ?? []
+    }
+
+    var selectedFile: FileItem? {
+        if let selectedFileID,
+           let file = selectedFiles.first(where: { $0.id == selectedFileID }) {
+            return file
+        }
+        return selectedFiles.first
     }
 
     private var watchers: [UUID: DirectoryWatcher] = [:]
@@ -44,6 +53,10 @@ final class FileStackController: ObservableObject {
     func refreshSelectedFolder() {
         guard let folder = selectedFolder else { return }
         reload(folderID: folder.id)
+    }
+
+    func selectFile(_ file: FileItem) {
+        selectedFileID = file.id
     }
 
     func clearAlert() {
@@ -95,15 +108,18 @@ final class FileStackController: ObservableObject {
     private func ensureSelectedFolderIsValid(with preferredID: UUID? = nil) {
         if let preferredID {
             selectedFolderID = preferredID
+            updateSelectionForCurrentFolder()
             return
         }
 
         if let selectedFolderID,
            folders.contains(where: { $0.id == selectedFolderID }) {
+            updateSelectionForCurrentFolder()
             return
         }
 
         selectedFolderID = folders.first?.id
+        updateSelectionForCurrentFolder()
     }
 
     private func startWatcher(for folder: WatchedFolder) {
@@ -138,11 +154,35 @@ final class FileStackController: ObservableObject {
         var folder = folders[index]
         folder.files = files
         folders[index] = folder
+        if folderID == selectedFolderID {
+            if files.isEmpty {
+                selectedFileID = nil
+            } else if let currentSelection = selectedFileID,
+                      files.contains(where: { $0.id == currentSelection }) == false {
+                selectedFileID = files.first?.id
+            } else if selectedFileID == nil {
+                selectedFileID = files.first?.id
+            }
+        }
     }
 
     private func saveFolders() {
         let paths = folders.map { $0.url.path }
         defaults.set(paths, forKey: pathsKey)
+    }
+
+    private func updateSelectionForCurrentFolder() {
+        guard let files = selectedFolder?.files, files.isEmpty == false else {
+            selectedFileID = nil
+            return
+        }
+
+        if let selectedFileID,
+           files.contains(where: { $0.id == selectedFileID }) {
+            return
+        }
+
+        selectedFileID = files.first?.id
     }
 
     private func detectScreenshotFolder() -> URL? {

@@ -5,6 +5,10 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @ObservedObject var controller: FileStackController
     @State private var presentingFolderImporter = false
+    private let gridColumns: [GridItem] = [
+        GridItem(.flexible(minimum: 140, maximum: 200), spacing: 12),
+        GridItem(.flexible(minimum: 140, maximum: 200), spacing: 12)
+    ]
 
     private var alertBinding: Binding<Bool> {
         Binding(
@@ -47,6 +51,10 @@ struct ContentView: View {
                 controller.alertMessage = error.localizedDescription
             }
         }
+        .overlay(
+            KeyEventHandlingView(selectedFile: controller.selectedFile)
+                .frame(width: 0, height: 0)
+        )
     }
 
     private var headerSection: some View {
@@ -96,12 +104,19 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(controller.selectedFiles) { file in
-                        FileRow(file: file)
-                            .onTapGesture(count: 2) {
-                                NSWorkspace.shared.open(file.url)
-                            }
+                ScrollView {
+                    LazyVGrid(columns: gridColumns, spacing: 12) {
+                        ForEach(controller.selectedFiles) { file in
+                            FilePreviewTile(
+                                file: file,
+                                isSelected: controller.selectedFile?.id == file.id,
+                                onSelect: {
+                                    controller.selectFile(file)
+                                },
+                                onOpen: {
+                                    NSWorkspace.shared.open(file.url)
+                                }
+                            )
                             .contextMenu {
                                 Button("Finder에서 보기") {
                                     NSWorkspace.shared.activateFileViewerSelecting([file.url])
@@ -113,10 +128,10 @@ struct ContentView: View {
                             .onDrag {
                                 NSItemProvider(object: file.url as NSURL)
                             }
+                        }
                     }
+                    .padding(.vertical, 4)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
         }
     }
@@ -153,33 +168,61 @@ struct ContentView: View {
     }
 }
 
-private struct FileRow: View {
+private struct FilePreviewTile: View {
     let file: FileItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            FileIconView(url: file.url)
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 8) {
+            FileThumbnailView(file: file)
+                .frame(height: 140)
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(file.displayName)
                     .font(.subheadline)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Text(detailText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Spacer(minLength: 4)
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tileBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(
+            color: isSelected ? Color.accentColor.opacity(0.25) : Color.black.opacity(0.08),
+            radius: isSelected ? 8 : 3,
+            y: isSelected ? 4 : 2
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelect()
+        }
+        .onTapGesture(count: 2) {
+            onSelect()
+            onOpen()
+        }
     }
 
     private var detailText: String {
         let time = file.relativeDateDescription
         if let size = file.fileSize {
-            let sizeText = FileRow.byteFormatter.string(fromByteCount: size)
+            let sizeText = FilePreviewTile.byteFormatter.string(fromByteCount: size)
             return "\(time) · \(sizeText)"
         }
         return time
+    }
+
+    private var tileBackground: some ShapeStyle {
+        Color(NSColor.controlBackgroundColor)
     }
 
     private static let byteFormatter: ByteCountFormatter = {
@@ -189,14 +232,68 @@ private struct FileRow: View {
     }()
 }
 
-private struct FileIconView: View {
-    let url: URL
+private struct FileThumbnailView: View {
+    let file: FileItem
+    @State private var thumbnail: NSImage?
+
+    private let targetSize = CGSize(width: 320, height: 240)
 
     var body: some View {
-        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-            .resizable()
-            .scaledToFit()
-            .frame(width: 32, height: 32)
-            .cornerRadius(4)
+        GeometryReader { proxy in
+            ZStack {
+                placeholderBackground
+
+                if let thumbnail {
+                    Image(nsImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                } else {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(placeholderLabel)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .task(id: file.id) {
+            await loadThumbnailIfNeeded()
+        }
+    }
+
+    private var placeholderBackground: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Color(NSColor.controlAccentColor).opacity(0.08))
+    }
+
+    private var placeholderLabel: String {
+        if let uti = file.typeIdentifier {
+            return uti
+        }
+        return file.url.pathExtension.uppercased().isEmpty ? "파일" : file.url.pathExtension.uppercased()
+    }
+
+    private func loadThumbnailIfNeeded() async {
+        if thumbnail != nil {
+            return
+        }
+
+        if let cached = ThumbnailCache.shared.image(for: file.url) {
+            await MainActor.run {
+                thumbnail = cached
+            }
+            return
+        }
+
+        let image = await ThumbnailCache.shared.loadThumbnail(for: file.url, size: targetSize)
+        await MainActor.run {
+            thumbnail = image
+        }
     }
 }

@@ -1,0 +1,99 @@
+import AppKit
+import QuickLook
+import QuickLookUI
+import SwiftUI
+
+struct KeyEventHandlingView: NSViewRepresentable {
+    var selectedFile: FileItem?
+
+    func makeNSView(context: Context) -> KeyEventHandlingNSView {
+        let view = KeyEventHandlingNSView()
+        view.selectedFile = selectedFile
+        return view
+    }
+
+    func updateNSView(_ nsView: KeyEventHandlingNSView, context: Context) {
+        nsView.selectedFile = selectedFile
+    }
+}
+
+final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewPanelDelegate {
+    var selectedFile: FileItem? {
+        didSet {
+            if oldValue?.id != selectedFile?.id {
+                refreshPreviewPanel()
+            }
+        }
+    }
+
+    private var previewItems: [FileItem] = []
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.makeFirstResponder(self)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 49: // Space
+            toggleQuickLook()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
+        true
+    }
+
+    override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = self
+        panel.delegate = self
+    }
+
+    override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        panel.dataSource = nil
+        panel.delegate = nil
+    }
+
+    func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+        previewItems.count
+    }
+
+    func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+        previewItems[index].url as NSURL
+    }
+
+    private func toggleQuickLook() {
+        guard let file = selectedFile else {
+            NSSound.beep()
+            return
+        }
+
+        previewItems = [file]
+
+        guard let panel = QLPreviewPanel.shared() else { return }
+        if panel.isVisible {
+            panel.orderOut(self)
+        } else {
+            panel.makeKeyAndOrderFront(self)
+            panel.reloadData()
+        }
+    }
+
+    private func refreshPreviewPanel() {
+        guard QLPreviewPanel.sharedPreviewPanelExists(),
+              let panel = QLPreviewPanel.shared() else { return }
+
+        if panel.isVisible {
+            if let file = selectedFile {
+                previewItems = [file]
+                panel.reloadData()
+            } else {
+                panel.orderOut(self)
+            }
+        }
+    }
+}

@@ -23,12 +23,26 @@
     "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.swiftdeps",
     "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileStackController.dia"
   },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.dia"
+  },
   "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift": {
     "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.d",
     "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swift.o",
     "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models~partial.swiftmodule",
     "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swiftdeps",
     "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.dia"
+  },
+  "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift": {
+    "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.d",
+    "object": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swift.o",
+    "swiftmodule": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache~partial.swiftmodule",
+    "swift-dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swiftdeps",
+    "diagnostics": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.dia"
   },
   "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift": {
     "dependencies": "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.d",
