@@ -49,10 +49,12 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return
         }
 
-        context.coordinator.applyUpdates(with: controller.currentFiles)
+        let needsLayout = context.coordinator.applyUpdates(with: controller.currentFiles)
         context.coordinator.updateSelection(from: controller)
 
-        layout.invalidateLayout()
+        if needsLayout {
+            layout.invalidateLayout()
+        }
     }
 
     final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout {
@@ -69,13 +71,17 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             self.lastKnownScale = parent.controller.previewScale
         }
 
-        func applyUpdates(with newFiles: [FileItem]) {
-            let needsReload = files != newFiles || abs(lastKnownScale - controller.previewScale) > 0.0001
+        @discardableResult
+        func applyUpdates(with newFiles: [FileItem]) -> Bool {
+            let scaleChanged = abs(lastKnownScale - controller.previewScale) > 0.0001
+            let dataChanged = files != newFiles
             files = newFiles
-            if needsReload {
+            if dataChanged || scaleChanged {
                 collectionView?.reloadData()
                 lastKnownScale = controller.previewScale
+                return true
             }
+            return false
         }
 
         func updateSelection(from controller: FileStackController) {
@@ -245,17 +251,18 @@ private struct IconCollectionLayoutMetrics {
     let thumbnailSize: NSSize
 }
 
-private final class IconCollectionItem: NSCollectionViewItem {
-    static let reuseIdentifier = NSUserInterfaceItemIdentifier("IconCollectionItem")
+    private final class IconCollectionItem: NSCollectionViewItem {
+        static let reuseIdentifier = NSUserInterfaceItemIdentifier("IconCollectionItem")
 
-    private let roundedBackground = NSView()
-    private let thumbnailView = NSImageView()
-    private let nameLabel = NSTextField(labelWithString: "")
-    private let detailLabel = NSTextField(labelWithString: "")
-    private var thumbnailWidthConstraint: NSLayoutConstraint?
-    private var thumbnailHeightConstraint: NSLayoutConstraint?
-    private var thumbnailTask: Task<Void, Never>?
-    private var currentFileID: String?
+        private let roundedBackground = NSView()
+        private let thumbnailView = NSImageView()
+        private let nameLabel = NSTextField(labelWithString: "")
+        private let detailLabel = NSTextField(labelWithString: "")
+        private let contentStack = NSStackView()
+        private var thumbnailWidthConstraint: NSLayoutConstraint?
+        private var thumbnailHeightConstraint: NSLayoutConstraint?
+        private var thumbnailTask: Task<Void, Never>?
+        private var currentFileID: String?
 
     override func loadView() {
         view = NSView()
@@ -264,6 +271,7 @@ private final class IconCollectionItem: NSCollectionViewItem {
         roundedBackground.wantsLayer = true
         roundedBackground.layer?.cornerRadius = 12
         roundedBackground.layer?.masksToBounds = true
+        roundedBackground.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
         thumbnailView.imageAlignment = .alignCenter
         thumbnailView.imageScaling = .scaleProportionallyUpOrDown
@@ -274,16 +282,35 @@ private final class IconCollectionItem: NSCollectionViewItem {
 
         nameLabel.font = .systemFont(ofSize: 13, weight: .medium)
         nameLabel.lineBreakMode = .byTruncatingMiddle
+        nameLabel.maximumNumberOfLines = 2
+        nameLabel.alignment = .center
+        nameLabel.textColor = .labelColor
 
         detailLabel.font = .systemFont(ofSize: 11)
         detailLabel.textColor = .secondaryLabelColor
         detailLabel.lineBreakMode = .byTruncatingTail
+        detailLabel.maximumNumberOfLines = 1
+        detailLabel.alignment = .center
+        detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        contentStack.orientation = .vertical
+        contentStack.alignment = .centerX
+        contentStack.spacing = 8
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
 
         roundedBackground.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(roundedBackground)
-        roundedBackground.addSubview(thumbnailView)
-        roundedBackground.addSubview(nameLabel)
-        roundedBackground.addSubview(detailLabel)
+        roundedBackground.addSubview(contentStack)
+        contentStack.addArrangedSubview(thumbnailView)
+
+        let textStack = NSStackView()
+        textStack.orientation = .vertical
+        textStack.alignment = .centerX
+        textStack.spacing = 4
+        textStack.translatesAutoresizingMaskIntoConstraints = false
+        textStack.addArrangedSubview(nameLabel)
+        textStack.addArrangedSubview(detailLabel)
+        contentStack.addArrangedSubview(textStack)
 
         NSLayoutConstraint.activate([
             roundedBackground.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -291,17 +318,10 @@ private final class IconCollectionItem: NSCollectionViewItem {
             roundedBackground.topAnchor.constraint(equalTo: view.topAnchor),
             roundedBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            thumbnailView.topAnchor.constraint(equalTo: roundedBackground.topAnchor, constant: 10),
-            thumbnailView.centerXAnchor.constraint(equalTo: roundedBackground.centerXAnchor),
-
-            nameLabel.topAnchor.constraint(equalTo: thumbnailView.bottomAnchor, constant: 8),
-            nameLabel.leadingAnchor.constraint(equalTo: roundedBackground.leadingAnchor, constant: 10),
-            nameLabel.trailingAnchor.constraint(equalTo: roundedBackground.trailingAnchor, constant: -10),
-
-            detailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            detailLabel.leadingAnchor.constraint(equalTo: roundedBackground.leadingAnchor, constant: 10),
-            detailLabel.trailingAnchor.constraint(equalTo: roundedBackground.trailingAnchor, constant: -10),
-            detailLabel.bottomAnchor.constraint(equalTo: roundedBackground.bottomAnchor, constant: -10)
+            contentStack.leadingAnchor.constraint(equalTo: roundedBackground.leadingAnchor, constant: 8),
+            contentStack.trailingAnchor.constraint(equalTo: roundedBackground.trailingAnchor, constant: -8),
+            contentStack.topAnchor.constraint(equalTo: roundedBackground.topAnchor, constant: 8),
+            contentStack.bottomAnchor.constraint(equalTo: roundedBackground.bottomAnchor, constant: -8)
         ])
 
         thumbnailWidthConstraint = thumbnailView.widthAnchor.constraint(equalToConstant: 120)
