@@ -52,6 +52,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsWindowController.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift"
         },
         {
@@ -82,6 +90,8 @@
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/FileTreeBuilder.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/KeyEventHandlingView.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swift.o",
+        "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsView.swift.o",
+        "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsWindowController.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailLoader.swift.o",
         "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/main.swift.o"
@@ -161,6 +171,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsWindowController.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/ThumbnailCache.swift.o"
         },
         {
@@ -185,6 +203,8 @@
         "/Users/june/workspace/file-stack/Sources/FileStackApp/FileTreeBuilder.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift",
+        "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsView.swift",
+        "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsWindowController.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift",
         "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift"
@@ -211,6 +231,8 @@
       "/Users/june/workspace/file-stack/Sources/FileStackApp/FileTreeBuilder.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/KeyEventHandlingView.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/Models.swift",
+      "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsView.swift",
+      "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsWindowController.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailLoader.swift",
       "/Users/june/workspace/file-stack/Sources/FileStackApp/main.swift",
@@ -329,6 +351,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/SettingsWindowController.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/Sources/FileStackApp/ThumbnailCache.swift"
         },
         {
@@ -376,6 +406,14 @@
         {
           "kind" : "file",
           "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/june/workspace/file-stack/.build/arm64-apple-macosx/debug/FileStackApp.build/SettingsWindowController.swift.o"
         },
         {
           "kind" : "file",

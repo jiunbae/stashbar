@@ -6,13 +6,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private var eventMonitor: Any?
     private let controller = FileStackController()
+    private lazy var settingsWindowController = SettingsWindowController(controller: controller)
+    private lazy var statusMenu: NSMenu = {
+        let menu = NSMenu()
+
+        let settingsItem = NSMenuItem(title: "설정...", action: #selector(openSettings(_:)), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
+        menu.addItem(.separator())
+
+        let quitItem = NSMenuItem(title: "종료", action: #selector(terminateApp(_:)), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
+        return menu
+    }()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "File Stack")
-            button.action = #selector(togglePopover(_:))
+            button.action = #selector(statusItemClicked(_:))
             button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
         popover.behavior = .transient
@@ -27,6 +44,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
+        }
+    }
+
+    @objc private func statusItemClicked(_ sender: Any?) {
+        guard let event = NSApp.currentEvent else {
+            togglePopover(sender)
+            return
+        }
+
+        let isRightClick = event.type == .rightMouseUp
+            || event.type == .otherMouseUp
+            || (event.type == .leftMouseUp && event.modifierFlags.contains(.control))
+
+        if isRightClick {
+            closePopover(sender: nil)
+            showStatusItemMenu(with: event)
+        } else {
+            togglePopover(sender)
         }
     }
 
@@ -48,6 +83,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func closePopover(sender: Any?) {
         popover.performClose(sender)
+    }
+
+    private func showStatusItemMenu(with event: NSEvent) {
+        guard let button = statusItem.button else { return }
+        NSMenu.popUpContextMenu(statusMenu, with: event, for: button)
     }
 
     private func positionPopover(relativeTo button: NSStatusBarButton) {
@@ -78,6 +118,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         popoverWindow.setFrame(frame, display: true)
+    }
+
+    @objc private func openSettings(_ sender: Any?) {
+        closePopover(sender: sender)
+        settingsWindowController.show()
+    }
+
+    @objc private func terminateApp(_ sender: Any?) {
+        NSApp.terminate(sender)
     }
 }
 
