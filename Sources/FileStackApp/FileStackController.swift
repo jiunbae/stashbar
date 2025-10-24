@@ -5,8 +5,15 @@ import os.log
 
 final class FileStackController: ObservableObject {
     @Published private(set) var folders: [WatchedFolder] = []
-    @Published var selectedFolderID: UUID?
-    @Published var selectedFileID: String?
+    @Published var selectedFolderID: UUID? {
+        didSet {
+            if selectedFolderID != oldValue {
+                updateSelectionForCurrentFolder()
+            }
+        }
+    }
+    @Published private(set) var selectedFileIDs: Set<String> = []
+    @Published private(set) var primarySelectedFileID: String?
     @Published var alertMessage: String?
     @Published var viewMode: FileViewMode
     @Published var previewScale: Double
@@ -18,17 +25,21 @@ final class FileStackController: ObservableObject {
         return folders.first(where: { $0.id == selectedFolderID })
     }
 
-    var selectedFiles: [FileItem] {
+    var currentFiles: [FileItem] {
         selectedFolder?.files ?? []
     }
 
     var selectedFile: FileItem? {
-        if let selectedFileID,
-           let file = selectedFiles.first(where: { $0.id == selectedFileID }) {
-            return file
-        }
-        return selectedFiles.first
+        guard let id = primarySelectedFileID else { return nil }
+        return currentFiles.first(where: { $0.id == id })
     }
+
+    var selectedFileItems: [FileItem] {
+        let ids = selectedFileIDs
+        return currentFiles.filter { ids.contains($0.id) }
+    }
+
+    private var selectionAnchorID: String?
 
     private var watchers: [UUID: DirectoryWatcher] = [:]
     private let defaults = UserDefaults.standard
@@ -93,9 +104,48 @@ final class FileStackController: ObservableObject {
         reload(folderID: folder.id)
     }
 
-    func selectFile(_ file: FileItem) {
-        guard selectedFileID != file.id else { return }
-        selectedFileID = file.id
+    func handleSelection(of file: FileItem, modifiers: NSEvent.ModifierFlags = []) {
+        let files = currentFiles
+        guard let fileIndex = files.firstIndex(where: { $0.id == file.id }) else { return }
+        let fileID = file.id
+        let anchorID = selectionAnchorID ?? primarySelectedFileID ?? fileID
+
+        if modifiers.contains(.shift),
+           let anchorIndex = files.firstIndex(where: { $0.id == anchorID }) {
+            let lower = min(anchorIndex, fileIndex)
+            let upper = max(anchorIndex, fileIndex)
+            let rangeIDs = Set((lower...upper).map { files[$0].id })
+            selectedFileIDs = rangeIDs
+            primarySelectedFileID = fileID
+            selectionAnchorID = anchorID
+        } else if modifiers.contains(.command) {
+            var updatedSelection = selectedFileIDs
+            if updatedSelection.contains(fileID) {
+                updatedSelection.remove(fileID)
+                selectedFileIDs = updatedSelection
+                if primarySelectedFileID == fileID {
+                    primarySelectedFileID = files.first(where: { updatedSelection.contains($0.id) })?.id
+                }
+            } else {
+                updatedSelection.insert(fileID)
+                selectedFileIDs = updatedSelection
+                primarySelectedFileID = fileID
+            }
+            selectionAnchorID = primarySelectedFileID
+        } else {
+            selectedFileIDs = [fileID]
+            primarySelectedFileID = fileID
+            selectionAnchorID = fileID
+        }
+
+        if selectedFileIDs.isEmpty {
+            primarySelectedFileID = nil
+            selectionAnchorID = nil
+        }
+    }
+
+    func isFileSelected(_ file: FileItem) -> Bool {
+        selectedFileIDs.contains(file.id)
     }
 
     func setViewMode(_ mode: FileViewMode) {
@@ -104,7 +154,7 @@ final class FileStackController: ObservableObject {
         defaults.set(mode.rawValue, forKey: viewModeKey)
         updateSelectionForCurrentFolder()
         if mode == .icon {
-            prefetchThumbnails(for: selectedFiles)
+            prefetchThumbnails(for: currentFiles)
         }
     }
 
@@ -113,7 +163,7 @@ final class FileStackController: ObservableObject {
         guard previewScale != clamped else { return }
         previewScale = clamped
         defaults.set(clamped, forKey: previewScaleKey)
-        prefetchThumbnails(for: selectedFiles)
+        prefetchThumbnails(for: currentFiles)
     }
 
     func clearAlert() {
@@ -164,19 +214,26 @@ final class FileStackController: ObservableObject {
 
     private func ensureSelectedFolderIsValid(with preferredID: UUID? = nil) {
         if let preferredID {
-            selectedFolderID = preferredID
+            if selectedFolderID != preferredID {
+                selectedFolderID = preferredID
+            } else {
+                updateSelectionForCurrentFolder()
+            }
+            return
+        }
+
+        if let currentID = selectedFolderID,
+           folders.contains(where: { $0.id == currentID }) {
             updateSelectionForCurrentFolder()
             return
         }
 
-        if let selectedFolderID,
-           folders.contains(where: { $0.id == selectedFolderID }) {
+        let newID = folders.first?.id
+        if selectedFolderID != newID {
+            selectedFolderID = newID
+        } else {
             updateSelectionForCurrentFolder()
-            return
         }
-
-        selectedFolderID = folders.first?.id
-        updateSelectionForCurrentFolder()
     }
 
     private func startWatcher(for folder: WatchedFolder) {
@@ -208,21 +265,12 @@ final class FileStackController: ObservableObject {
 
     private func apply(files: [FileItem], to folderID: UUID) {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
-        var folder = folders[index]
-        folder.files = files
-        folders[index] = folder
+        folders[index].files = files
         if folderID == selectedFolderID {
-            if files.isEmpty {
-                selectedFileID = nil
-            } else if let currentSelection = selectedFileID,
-                      files.contains(where: { $0.id == currentSelection }) == false {
-                selectedFileID = files.first?.id
-            } else if selectedFileID == nil {
-                selectedFileID = files.first?.id
-            }
+            updateSelectionForCurrentFolder()
+        } else if viewMode == .icon {
+            prefetchThumbnails(for: files)
         }
-
-        prefetchThumbnails(for: folder.files)
     }
 
     private func saveFolders() {
@@ -232,16 +280,48 @@ final class FileStackController: ObservableObject {
 
     private func updateSelectionForCurrentFolder() {
         guard let files = selectedFolder?.files, files.isEmpty == false else {
-            selectedFileID = nil
+            if selectedFileIDs.isEmpty == false || primarySelectedFileID != nil {
+                selectedFileIDs = []
+                primarySelectedFileID = nil
+                selectionAnchorID = nil
+            }
             return
         }
 
-        if let selectedFileID,
-           files.contains(where: { $0.id == selectedFileID }) {
-            return
+        let validIDs = Set(files.map { $0.id })
+        selectedFileIDs = selectedFileIDs.intersection(validIDs)
+
+        if let primary = primarySelectedFileID, validIDs.contains(primary) == false {
+            primarySelectedFileID = nil
         }
 
-        selectedFileID = files.first?.id
+        if selectedFileIDs.isEmpty {
+            if let primary = primarySelectedFileID, validIDs.contains(primary) {
+                selectedFileIDs = [primary]
+            } else if let first = files.first {
+                selectedFileIDs = [first.id]
+                primarySelectedFileID = first.id
+            }
+        }
+
+        if primarySelectedFileID == nil {
+            if let firstSelected = files.first(where: { selectedFileIDs.contains($0.id) }) {
+                primarySelectedFileID = firstSelected.id
+            } else if let first = files.first {
+                selectedFileIDs = [first.id]
+                primarySelectedFileID = first.id
+            }
+        }
+
+        if let primary = primarySelectedFileID {
+            selectedFileIDs.insert(primary)
+        }
+
+        if let anchor = selectionAnchorID, validIDs.contains(anchor) == false {
+            selectionAnchorID = primarySelectedFileID
+        } else if selectionAnchorID == nil {
+            selectionAnchorID = primarySelectedFileID
+        }
 
         prefetchThumbnails(for: files)
     }

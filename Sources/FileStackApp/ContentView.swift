@@ -102,7 +102,7 @@ struct ContentView: View {
 
     private var fileListSection: some View {
         Group {
-            if controller.selectedFiles.isEmpty {
+            if controller.currentFiles.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tray")
                         .font(.system(size: 24))
@@ -132,13 +132,13 @@ struct ContentView: View {
         let metrics = iconGridMetrics(for: controller.previewScale)
         return ScrollView {
             LazyVGrid(columns: metrics.columns, spacing: 12) {
-                ForEach(controller.selectedFiles) { file in
+                ForEach(controller.currentFiles) { file in
                     FilePreviewTile(
                         file: file,
-                        isSelected: controller.selectedFile?.id == file.id,
+                        isSelected: controller.isFileSelected(file),
                         thumbnailSize: metrics.tileSize,
-                        onSelect: {
-                            controller.selectFile(file)
+                        onSelect: { modifiers in
+                            controller.handleSelection(of: file, modifiers: modifiers)
                         },
                         onOpen: {
                             NSWorkspace.shared.open(file.url)
@@ -184,13 +184,13 @@ struct ContentView: View {
     private var listView: some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                ForEach(controller.selectedFiles) { file in
+                ForEach(controller.currentFiles) { file in
                     FileListRow(
                         file: file,
-                        isSelected: controller.selectedFile?.id == file.id,
+                        isSelected: controller.isFileSelected(file),
                         iconSize: CGSize(width: 28, height: 28),
-                        onSelect: {
-                            controller.selectFile(file)
+                        onSelect: { modifiers in
+                            controller.handleSelection(of: file, modifiers: modifiers)
                         },
                         onOpen: {
                             NSWorkspace.shared.open(file.url)
@@ -215,13 +215,13 @@ struct ContentView: View {
 
     private var hierarchyView: some View {
         if let folderURL = controller.selectedFolder?.url {
-            let refreshToken = controller.selectedFiles.map { $0.id }.joined(separator: ":")
+            let refreshToken = controller.currentFiles.map { $0.id }.joined(separator: ":")
             return AnyView(
                 HierarchyBrowser(
                     rootURL: folderURL,
                     refreshToken: refreshToken,
-                    selectedFileID: controller.selectedFile?.id,
-                    onSelect: { controller.selectFile($0) },
+                    selectedFileIDs: controller.selectedFileIDs,
+                    onSelect: { file, modifiers in controller.handleSelection(of: file, modifiers: modifiers) },
                     onOpen: { NSWorkspace.shared.open($0.url) }
                 )
             )
@@ -295,7 +295,7 @@ private struct FilePreviewTile: View {
     let file: FileItem
     let isSelected: Bool
     let thumbnailSize: CGSize
-    let onSelect: () -> Void
+    let onSelect: (NSEvent.ModifierFlags) -> Void
     let onOpen: () -> Void
 
     var body: some View {
@@ -327,10 +327,12 @@ private struct FilePreviewTile: View {
         )
         .contentShape(Rectangle())
         .onTapGesture {
-            onSelect()
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(modifiers)
         }
         .onTapGesture(count: 2) {
-            onSelect()
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(modifiers)
             onOpen()
         }
     }
@@ -417,7 +419,7 @@ private struct FileListRow: View {
     let file: FileItem
     let isSelected: Bool
     let iconSize: CGSize
-    let onSelect: () -> Void
+    let onSelect: (NSEvent.ModifierFlags) -> Void
     let onOpen: () -> Void
 
     var body: some View {
@@ -446,10 +448,12 @@ private struct FileListRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
         .onTapGesture {
-            onSelect()
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(modifiers)
         }
         .onTapGesture(count: 2) {
-            onSelect()
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(modifiers)
             onOpen()
         }
     }
@@ -481,8 +485,8 @@ private struct FileListRow: View {
 private struct HierarchyBrowser: View {
     let rootURL: URL
     let refreshToken: String
-    let selectedFileID: String?
-    let onSelect: (FileItem) -> Void
+    let selectedFileIDs: Set<String>
+    let onSelect: (FileItem, NSEvent.ModifierFlags) -> Void
     let onOpen: (FileItem) -> Void
 
     @State private var rootEntry: FileSystemEntry?
@@ -504,7 +508,7 @@ private struct HierarchyBrowser: View {
                         OutlineGroup(children, children: \.children) { entry in
                             FileHierarchyRow(
                                 entry: entry,
-                                isSelected: selectedFileID == entry.file.id,
+                                isSelected: selectedFileIDs.contains(entry.file.id),
                                 onSelect: onSelect,
                                 onOpen: onOpen
                             )
@@ -570,7 +574,7 @@ private struct HierarchyBrowser: View {
 private struct FileHierarchyRow: View {
     let entry: FileSystemEntry
     let isSelected: Bool
-    let onSelect: (FileItem) -> Void
+    let onSelect: (FileItem, NSEvent.ModifierFlags) -> Void
     let onOpen: (FileItem) -> Void
 
     var body: some View {
@@ -600,10 +604,12 @@ private struct FileHierarchyRow: View {
                 .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
         )
         .onTapGesture {
-            onSelect(entry.file)
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(entry.file, modifiers)
         }
         .onTapGesture(count: 2) {
-            onSelect(entry.file)
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(entry.file, modifiers)
             onOpen(entry.file)
         }
     }
