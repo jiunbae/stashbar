@@ -144,6 +144,25 @@ final class FileStackController: ObservableObject {
         }
     }
 
+    func updateSelection(ids: Set<String>, primaryID: String?) {
+        let validIDs = Set(currentFiles.map { $0.id })
+        let filtered = ids.intersection(validIDs)
+        selectedFileIDs = filtered
+
+        if let primaryID, filtered.contains(primaryID) {
+            primarySelectedFileID = primaryID
+        } else {
+            primarySelectedFileID = filtered.first
+        }
+
+        selectionAnchorID = primarySelectedFileID
+
+        if filtered.isEmpty {
+            primarySelectedFileID = nil
+            selectionAnchorID = nil
+        }
+    }
+
     func isFileSelected(_ file: FileItem) -> Bool {
         selectedFileIDs.contains(file.id)
     }
