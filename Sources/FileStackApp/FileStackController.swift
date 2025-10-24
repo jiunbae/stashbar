@@ -1,6 +1,7 @@
+import AppKit
+import CoreGraphics
 import Foundation
 import os.log
-import CoreGraphics
 
 final class FileStackController: ObservableObject {
     @Published private(set) var folders: [WatchedFolder] = []
@@ -56,6 +57,27 @@ final class FileStackController: ObservableObject {
 
     func addFolder(url: URL) {
         addFolder(url: url, persist: true)
+    }
+
+    func presentFolderSelectionPanel() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.canCreateDirectories = false
+            panel.prompt = "선택"
+            panel.title = "감시할 폴더 선택"
+
+            NSApp.activate(ignoringOtherApps: true)
+
+            panel.begin { [weak self] response in
+                guard response == .OK, let url = panel.urls.first else { return }
+                self?.addFolder(url: url)
+            }
+        }
     }
 
     func removeFolder(_ folder: WatchedFolder) {

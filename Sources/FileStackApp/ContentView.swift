@@ -1,10 +1,8 @@
 import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var controller: FileStackController
-    @State private var presentingFolderImporter = false
     private var viewModeBinding: Binding<FileViewMode> {
         Binding(
             get: { controller.viewMode },
@@ -45,20 +43,6 @@ struct ContentView: View {
             }
         } message: {
             Text(controller.alertMessage ?? "")
-        }
-        .fileImporter(
-            isPresented: $presentingFolderImporter,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    controller.addFolder(url: url)
-                }
-            case .failure(let error):
-                controller.alertMessage = error.localizedDescription
-            }
         }
         .overlay(
             KeyEventHandlingView(selectedFile: controller.selectedFile)
@@ -249,7 +233,7 @@ struct ContentView: View {
     private var footerSection: some View {
         HStack(spacing: 12) {
             Button {
-                presentingFolderImporter = true
+                controller.presentFolderSelectionPanel()
             } label: {
                 Label("폴더 추가", systemImage: "folder.badge.plus")
             }

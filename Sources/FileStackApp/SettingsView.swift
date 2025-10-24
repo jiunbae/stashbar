@@ -1,9 +1,7 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var controller: FileStackController
-    @State private var presentingFolderImporter = false
 
     private var viewModeBinding: Binding<FileViewMode> {
         Binding(
@@ -75,7 +73,7 @@ struct SettingsView: View {
                     }
 
                     Button {
-                        presentingFolderImporter = true
+                        controller.presentFolderSelectionPanel()
                     } label: {
                         Label("폴더 추가", systemImage: "plus")
                     }
@@ -85,20 +83,6 @@ struct SettingsView: View {
             .padding(24)
         }
         .frame(minWidth: 420, minHeight: 320)
-        .fileImporter(
-            isPresented: $presentingFolderImporter,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    controller.addFolder(url: url)
-                }
-            case .failure(let error):
-                controller.alertMessage = error.localizedDescription
-            }
-        }
         .alert("문제가 발생했습니다", isPresented: alertBinding) {
             Button("확인", role: .cancel) {
                 controller.clearAlert()
