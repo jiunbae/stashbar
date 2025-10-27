@@ -50,6 +50,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return
         }
 
+        _ = context.coordinator.layoutMetrics(for: collectionView)
         let needsLayout = context.coordinator.applyUpdates(with: controller.currentFiles)
         context.coordinator.updateSelection(from: controller)
 
@@ -66,6 +67,10 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         private var lastUserSelectionIndexPath: IndexPath?
         private var lastKnownScale: Double
         fileprivate var doubleClickRecognizer: NSClickGestureRecognizer?
+        private var currentMetrics = IconCollectionLayoutMetrics(
+            itemSize: NSSize(width: 140, height: 180),
+            thumbnailSize: NSSize(width: 120, height: 120)
+        )
 
         init(parent: IconCollectionViewRepresentable) {
             self.controller = parent.controller
@@ -234,12 +239,15 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             applySelectionFromController()
         }
 
-        private func layoutMetrics(for collectionView: NSCollectionView) -> IconCollectionLayoutMetrics {
+        @discardableResult
+        fileprivate func layoutMetrics(for collectionView: NSCollectionView) -> IconCollectionLayoutMetrics {
             guard let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout else {
-                return IconCollectionLayoutMetrics(
+                let fallback = IconCollectionLayoutMetrics(
                     itemSize: NSSize(width: 140, height: 180),
                     thumbnailSize: NSSize(width: 120, height: 120)
                 )
+                currentMetrics = fallback
+                return fallback
             }
 
             let inset = layout.sectionInset
@@ -267,9 +275,11 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 thumbnailSize: NSSize(width: thumbnailWidth, height: thumbnailHeight)
             )
 
+            currentMetrics = metrics
             if layout.itemSize != metrics.itemSize {
                 layout.itemSize = metrics.itemSize
                 layout.invalidateLayout()
+                collectionView.layoutSubtreeIfNeeded()
             }
 
             return metrics
