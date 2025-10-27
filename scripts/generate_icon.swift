@@ -58,7 +58,7 @@ shadow.shadowOffset = NSSize(width: 0, height: -iconSize * 0.03)
 
 let attributes: [NSAttributedString.Key: Any] = [
     .font: font,
-    .foregroundColor: accent,
+    .foregroundColor: NSColor.white,
     .paragraphStyle: paragraph,
     .shadow: shadow
 ]
