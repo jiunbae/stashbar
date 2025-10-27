@@ -129,11 +129,11 @@ let headlineOriginY = iconRect.maxY - 10
 (bulletCopy as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY - 130), withAttributes: bulletAttributes)
 
 // Screenshot card
-let cardWidth = heroWidth * 0.48
-let cardHeight = heroHeight * 0.65
+let cardWidth = heroWidth * 0.40
+let cardHeight = heroHeight * 0.58
 let cardRect = CGRect(
-    x: heroWidth - cardWidth - heroWidth * 0.07,
-    y: heroHeight * 0.12,
+    x: heroWidth - cardWidth - heroWidth * 0.08,
+    y: heroHeight * 0.10,
     width: cardWidth,
     height: cardHeight
 )
