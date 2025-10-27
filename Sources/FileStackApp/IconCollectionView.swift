@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import QuartzCore
 import SwiftUI
 
 struct IconCollectionViewRepresentable: NSViewRepresentable {
@@ -376,9 +377,18 @@ private struct IconCollectionLayoutMetrics {
         view.translatesAutoresizingMaskIntoConstraints = false
 
         roundedBackground.wantsLayer = true
-        roundedBackground.layer?.cornerRadius = 12
-        roundedBackground.layer?.masksToBounds = true
-        roundedBackground.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        if let layer = roundedBackground.layer {
+            layer.cornerRadius = 12
+            layer.masksToBounds = true
+            layer.backgroundColor = NSColor.windowBackgroundColor.cgColor
+            layer.borderWidth = 0
+            layer.borderColor = NSColor.clear.cgColor
+            layer.actions = [
+                "backgroundColor": NSNull(),
+                "borderColor": NSNull(),
+                "borderWidth": NSNull()
+            ]
+        }
 
         thumbnailView.imageAlignment = .alignCenter
         thumbnailView.imageScaling = .scaleProportionallyUpOrDown
@@ -509,12 +519,19 @@ private struct IconCollectionLayoutMetrics {
     }
 
     private func updateSelectionAppearance() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
         let borderColor = isSelected ? NSColor.controlAccentColor.cgColor : NSColor.clear.cgColor
         let backgroundColor: NSColor = isSelected ? NSColor.controlAccentColor.withAlphaComponent(0.18) : NSColor.windowBackgroundColor
 
-        roundedBackground.layer?.borderColor = borderColor
-        roundedBackground.layer?.borderWidth = isSelected ? 1.8 : 0
-        roundedBackground.layer?.backgroundColor = backgroundColor.cgColor
+        if let layer = roundedBackground.layer {
+            layer.borderColor = borderColor
+            layer.borderWidth = isSelected ? 1.8 : 0
+            layer.backgroundColor = backgroundColor.cgColor
+        }
+
+        CATransaction.commit()
     }
 
     private static let sizeFormatter: ByteCountFormatter = {
