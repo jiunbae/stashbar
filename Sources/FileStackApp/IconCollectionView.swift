@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 struct IconCollectionViewRepresentable: NSViewRepresentable {
@@ -43,7 +44,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        context.coordinator.controller = controller
+        context.coordinator.setController(controller)
 
         guard let collectionView = context.coordinator.collectionView,
               let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout else {
@@ -71,10 +72,37 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             itemSize: NSSize(width: 140, height: 180),
             thumbnailSize: NSSize(width: 120, height: 120)
         )
+        private var scaleCancellable: AnyCancellable?
 
         init(parent: IconCollectionViewRepresentable) {
             self.controller = parent.controller
             self.lastKnownScale = parent.controller.previewScale
+            super.init()
+            bindPreviewScale()
+        }
+
+        func setController(_ controller: FileStackController) {
+            guard self.controller !== controller else { return }
+            self.controller = controller
+            lastKnownScale = controller.previewScale
+            bindPreviewScale()
+        }
+
+        private func bindPreviewScale() {
+            scaleCancellable = controller.$previewScale
+                .removeDuplicates()
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in
+                    self?.handlePreviewScaleChange()
+                }
+        }
+
+        private func handlePreviewScaleChange() {
+            guard let collectionView else { return }
+            lastKnownScale = controller.previewScale
+            _ = layoutMetrics(for: collectionView)
+            collectionView.reloadData()
+            applySelectionFromController()
         }
 
         @discardableResult
