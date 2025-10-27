@@ -68,6 +68,11 @@ EOF
 cp "${EXECUTABLE_PATH}" "${MACOS_DIR}/${APP_PRODUCT}"
 chmod +x "${MACOS_DIR}/${APP_PRODUCT}"
 
+if command -v strip >/dev/null 2>&1; then
+  echo "Stripping symbols from executable"
+  strip -x "${MACOS_DIR}/${APP_PRODUCT}" || true
+fi
+
 if [[ -d "${RESOURCE_DIR}" ]]; then
   rsync -a "${RESOURCE_DIR}/" "${RESOURCES_DIR}/"
 fi
