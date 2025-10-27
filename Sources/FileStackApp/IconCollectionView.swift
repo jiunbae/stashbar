@@ -3,6 +3,21 @@ import Combine
 import QuartzCore
 import SwiftUI
 
+private protocol IconCollectionCommandHandling: AnyObject {
+    func handleCommandKey(_ event: NSEvent) -> Bool
+}
+
+private final class FileCollectionView: NSCollectionView {
+    weak var commandHandler: IconCollectionCommandHandling?
+
+    override func keyDown(with event: NSEvent) {
+        if commandHandler?.handleCommandKey(event) == true {
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 struct IconCollectionViewRepresentable: NSViewRepresentable {
     let controller: FileStackController
 
@@ -21,7 +36,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         layout.minimumLineSpacing = 12
         layout.sectionInset = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
 
-        let collectionView = NSCollectionView()
+        let collectionView = FileCollectionView()
         collectionView.collectionViewLayout = layout
         collectionView.isSelectable = true
         collectionView.allowsMultipleSelection = true
@@ -38,6 +53,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
         context.coordinator.doubleClickRecognizer = doubleClickRecognizer
 
+        collectionView.commandHandler = context.coordinator
         context.coordinator.collectionView = collectionView
 
         scrollView.documentView = collectionView
@@ -61,7 +77,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout {
+    final class Coordinator: NSObject, IconCollectionCommandHandling, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout {
         var controller: FileStackController
         var collectionView: NSCollectionView?
         private var files: [FileItem] = []
@@ -128,6 +144,42 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 return
             }
             applySelectionFromController()
+        }
+
+        func handleCommandKey(_ event: NSEvent) -> Bool {
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            let isCommand = modifiers.contains(.command)
+
+            if isCommand, let character = event.charactersIgnoringModifiers?.lowercased() {
+                switch character {
+                case "c":
+                    controller.copySelectedFilesToPasteboard()
+                    return true
+                case "x":
+                    controller.cutSelectedFilesToPasteboard()
+                    return true
+                case "v":
+                    controller.pasteFilesFromPasteboard()
+                    return true
+                case "a":
+                    collectionView?.selectAll(nil)
+                    return true
+                default:
+                    break
+                }
+
+                if event.keyCode == 51 { // Command + Delete
+                    controller.deleteSelectedFiles()
+                    return true
+                }
+            }
+
+            if event.keyCode == 51 { // Delete
+                controller.deleteSelectedFiles()
+                return true
+            }
+
+            return false
         }
 
         func numberOfSections(in collectionView: NSCollectionView) -> Int { 1 }

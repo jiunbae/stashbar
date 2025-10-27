@@ -51,6 +51,8 @@ final class FileStackController: ObservableObject {
     private let viewModeKey = "ViewModePreference"
     private let previewScaleKey = "PreviewScalePreference"
     private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
+    private let cutPasteboardType = NSPasteboard.PasteboardType("com.file-stack.cut-indicator")
+    private var pendingCutURLs: [URL] = []
 
     init() {
         if let rawValue = defaults.string(forKey: viewModeKey),
@@ -187,6 +189,105 @@ final class FileStackController: ObservableObject {
 
     func clearAlert() {
         alertMessage = nil
+    }
+
+    func copySelectedFilesToPasteboard() {
+        preparePasteboardFromSelection(asCut: false)
+    }
+
+    func cutSelectedFilesToPasteboard() {
+        preparePasteboardFromSelection(asCut: true)
+    }
+
+    func pasteFilesFromPasteboard() {
+        guard let folder = selectedFolder else {
+            NSSound.beep()
+            return
+        }
+
+        let pasteboard = NSPasteboard.general
+        guard let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], urls.isEmpty == false else {
+            NSSound.beep()
+            return
+        }
+
+        let isCutOperation = pasteboard.string(forType: cutPasteboardType) == "cut" && pendingCutURLs.isEmpty == false
+        let destinationFolder = folder.url
+
+        workerQueue.async { [weak self] in
+            guard let self else { return }
+
+            var errors: [String] = []
+
+            for sourceURL in urls {
+                let destination = self.uniqueDestinationURL(for: sourceURL, in: destinationFolder)
+                do {
+                    if isCutOperation {
+                        try self.fileManager.moveItem(at: sourceURL, to: destination)
+                    } else {
+                        try self.fileManager.copyItem(at: sourceURL, to: destination)
+                    }
+                } catch {
+                    errors.append("\(sourceURL.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+
+            DispatchQueue.main.async {
+                if errors.isEmpty == false {
+                    self.alertMessage = "파일 붙여넣기에 실패했습니다:\n" + errors.joined(separator: "\n")
+                    NSSound.beep()
+                }
+                self.pendingCutURLs = []
+                pasteboard.setString("copy", forType: self.cutPasteboardType)
+                self.refreshSelectedFolder()
+            }
+        }
+    }
+
+    func deleteSelectedFiles() {
+        let files = selectedFileItems
+        guard files.isEmpty == false else {
+            NSSound.beep()
+            return
+        }
+
+        let urls = files.map { $0.url }
+        workerQueue.async { [weak self] in
+            guard let self else { return }
+
+            var errors: [String] = []
+            for url in urls {
+                do {
+                    try self.fileManager.trashItem(at: url, resultingItemURL: nil)
+                } catch {
+                    errors.append("\(url.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+
+            DispatchQueue.main.async {
+                if errors.isEmpty == false {
+                    self.alertMessage = "휴지통으로 이동하지 못했습니다:\n" + errors.joined(separator: "\n")
+                    NSSound.beep()
+                }
+                self.refreshSelectedFolder()
+            }
+        }
+    }
+
+    private func preparePasteboardFromSelection(asCut: Bool) {
+        let files = selectedFileItems
+        guard files.isEmpty == false else {
+            NSSound.beep()
+            return
+        }
+
+        let urls = files.map { $0.url }
+        pendingCutURLs = asCut ? urls : []
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects(urls.map { $0 as NSURL })
+        pasteboard.setString(asCut ? "cut" : "copy", forType: cutPasteboardType)
     }
 
     private func loadPersistedFolders() {
@@ -365,6 +466,27 @@ final class FileStackController: ObservableObject {
         let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
         let height = max(width * 0.75, 60)
         return CGSize(width: width, height: height)
+    }
+
+    private func uniqueDestinationURL(for sourceURL: URL, in folderURL: URL) -> URL {
+        var destination = folderURL.appendingPathComponent(sourceURL.lastPathComponent)
+        let pathExtension = destination.pathExtension
+        let baseName = destination.deletingPathExtension().lastPathComponent
+
+        var copyIndex = 1
+        while fileManager.fileExists(atPath: destination.path) {
+            let suffix = copyIndex == 1 ? " copy" : " copy \(copyIndex)"
+            let newName: String
+            if pathExtension.isEmpty {
+                newName = baseName + suffix
+            } else {
+                newName = baseName + suffix + "." + pathExtension
+            }
+            destination = folderURL.appendingPathComponent(newName)
+            copyIndex += 1
+        }
+
+        return destination
     }
 
     private func detectScreenshotFolder() -> URL? {

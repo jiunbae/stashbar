@@ -29,11 +29,10 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
     private var previewItems: [FileItem] = []
     private var keyMonitor: Any?
 
-    override var acceptsFirstResponder: Bool { true }
+    override var acceptsFirstResponder: Bool { false }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        window?.makeFirstResponder(self)
         startMonitoringKeys()
     }
 
@@ -91,7 +90,6 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
 
         if panel.isVisible {
             panel.orderOut(self)
-            window?.makeFirstResponder(self)
             return
         }
 
@@ -136,7 +134,5 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
         }
     }
 
-    func previewPanelWillClose(_ panel: QLPreviewPanel!) {
-        window?.makeFirstResponder(self)
-    }
+    func previewPanelWillClose(_ panel: QLPreviewPanel!) {}
 }
