@@ -2,6 +2,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 import os.log
+import ServiceManagement
 
 final class FileStackController: ObservableObject {
     @Published private(set) var folders: [WatchedFolder] = []
@@ -17,6 +18,7 @@ final class FileStackController: ObservableObject {
     @Published var alertMessage: String?
     @Published var viewMode: FileViewMode
     @Published var previewScale: Double
+    @Published private(set) var launchesAtLogin: Bool
 
     var selectedFolder: WatchedFolder? {
         guard let selectedFolderID else {
@@ -50,6 +52,7 @@ final class FileStackController: ObservableObject {
     private let fileManager = FileManager.default
     private let viewModeKey = "ViewModePreference"
     private let previewScaleKey = "PreviewScalePreference"
+    private let launchAtLoginKey = "LaunchAtLoginPreference"
     private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
     private let cutPasteboardType = NSPasteboard.PasteboardType("com.file-stack.cut-indicator")
     private var pendingCutURLs: [URL] = []
@@ -64,6 +67,12 @@ final class FileStackController: ObservableObject {
 
         let storedScale = defaults.double(forKey: previewScaleKey)
         previewScale = previewScaleRange.contains(storedScale) ? storedScale : 1.0
+
+        if #available(macOS 13.0, *) {
+            launchesAtLogin = SMAppService.mainApp.status == .enabled
+        } else {
+            launchesAtLogin = defaults.bool(forKey: launchAtLoginKey)
+        }
 
         loadPersistedFolders()
     }
@@ -189,6 +198,29 @@ final class FileStackController: ObservableObject {
 
     func clearAlert() {
         alertMessage = nil
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        guard launchesAtLogin != enabled else { return }
+
+        if #available(macOS 13.0, *) {
+            do {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+                launchesAtLogin = SMAppService.mainApp.status == .enabled
+                defaults.set(enabled, forKey: launchAtLoginKey)
+            } catch {
+                launchesAtLogin = !enabled
+                alertMessage = "로그인 시 실행 설정에 실패했습니다: \(error.localizedDescription)"
+                log.error("Failed to toggle login item: \(error.localizedDescription, privacy: .public)")
+            }
+        } else {
+            launchesAtLogin = enabled
+            defaults.set(enabled, forKey: launchAtLoginKey)
+        }
     }
 
     func copySelectedFilesToPasteboard() {

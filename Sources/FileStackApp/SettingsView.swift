@@ -28,9 +28,20 @@ struct SettingsView: View {
         )
     }
 
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { controller.launchesAtLogin },
+            set: { controller.setLaunchAtLogin($0) }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Form {
+                Section("일반") {
+                    Toggle("로그인 시 자동 실행", isOn: launchAtLoginBinding)
+                }
+
                 Section("보기") {
                     Picker("기본 보기 방식", selection: viewModeBinding) {
                         ForEach(FileViewMode.allCases) { mode in
