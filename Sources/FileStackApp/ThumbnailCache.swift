@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import os.log
 import QuickLookThumbnailing
 
 final class ThumbnailCache: @unchecked Sendable {
@@ -7,6 +8,7 @@ final class ThumbnailCache: @unchecked Sendable {
 
     private let cache = NSCache<NSURL, NSImage>()
     private let queue = DispatchQueue(label: "com.file-stack.thumbnail", qos: .userInitiated)
+    private let logger = Logger(subsystem: "com.file-stack.app", category: "thumbnail")
 
     private init() {
         cache.countLimit = 200
@@ -71,7 +73,7 @@ final class ThumbnailCache: @unchecked Sendable {
                         completion(nil)
                     }
                     if let error {
-                        NSLog("Thumbnail generation failed: \(error.localizedDescription)")
+                        self.logger.debug("Thumbnail generation failed for \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     }
                 }
             }

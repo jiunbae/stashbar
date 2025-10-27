@@ -79,30 +79,14 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             if dataChanged || scaleChanged {
                 collectionView?.reloadData()
                 lastKnownScale = controller.previewScale
+                applySelectionFromController()
                 return true
             }
             return false
         }
 
         func updateSelection(from controller: FileStackController) {
-            guard let collectionView else { return }
-            suppressSelectionUpdates = true
-
-            let ids = controller.selectedFileIDs
-            let indexPaths = Set(ids.compactMap { id -> IndexPath? in
-                guard let index = files.firstIndex(where: { $0.id == id }) else { return nil }
-                return IndexPath(item: index, section: 0)
-            })
-            collectionView.selectionIndexPaths = indexPaths
-
-            if let primaryID = controller.primarySelectedFileID,
-               let primaryIndex = files.firstIndex(where: { $0.id == primaryID }) {
-                lastUserSelectionIndexPath = IndexPath(item: primaryIndex, section: 0)
-            } else {
-                lastUserSelectionIndexPath = indexPaths.sorted(by: { $0.item < $1.item }).last
-            }
-
-            suppressSelectionUpdates = false
+            applySelectionFromController()
         }
 
         func numberOfSections(in collectionView: NSCollectionView) -> Int { 1 }
@@ -132,6 +116,34 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
             guard suppressSelectionUpdates == false else { return }
             syncSelectionToController()
+        }
+
+        func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
+            guard let indexPath = indexPaths.first, indexPath.item < files.count else {
+                return indexPaths
+            }
+
+            guard let event = NSApp.currentEvent, isMouseSelectionEvent(event) else {
+                return indexPaths
+            }
+
+            controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
+            applySelectionFromController()
+            return []
+        }
+
+        func collectionView(_ collectionView: NSCollectionView, shouldDeselectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
+            guard let indexPath = indexPaths.first, indexPath.item < files.count else {
+                return indexPaths
+            }
+
+            guard let event = NSApp.currentEvent, isMouseSelectionEvent(event) else {
+                return indexPaths
+            }
+
+            controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
+            applySelectionFromController()
+            return []
         }
 
         func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
@@ -217,6 +229,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             }
 
             controller.updateSelection(ids: ids, primaryID: primaryID)
+            applySelectionFromController()
         }
 
         private func layoutMetrics(for collectionView: NSCollectionView) -> IconCollectionLayoutMetrics {
@@ -242,6 +255,44 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 itemSize: NSSize(width: width, height: totalHeight),
                 thumbnailSize: NSSize(width: thumbnailWidth, height: thumbnailHeight)
             )
+        }
+
+        private func applySelectionFromController() {
+            guard let collectionView else { return }
+
+            let desiredIndexPaths = Set(controller.selectedFileIDs.compactMap(indexPath(forFileID:)))
+            let shouldUpdate = collectionView.selectionIndexPaths != desiredIndexPaths
+
+            let wasSuppressing = suppressSelectionUpdates
+            if !wasSuppressing { suppressSelectionUpdates = true }
+            if shouldUpdate {
+                collectionView.selectionIndexPaths = desiredIndexPaths
+            }
+            if let primaryID = controller.primarySelectedFileID,
+               let path = indexPath(forFileID: primaryID) {
+                lastUserSelectionIndexPath = path
+            } else {
+                lastUserSelectionIndexPath = desiredIndexPaths.sorted(by: { $0.item < $1.item }).last
+            }
+            if !wasSuppressing { suppressSelectionUpdates = false }
+        }
+
+        private func indexPath(forFileID id: String) -> IndexPath? {
+            guard let index = files.firstIndex(where: { $0.id == id }) else { return nil }
+            return IndexPath(item: index, section: 0)
+        }
+
+        private func modifiers(from event: NSEvent?) -> NSEvent.ModifierFlags {
+            event?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+        }
+
+        private func isMouseSelectionEvent(_ event: NSEvent) -> Bool {
+            switch event.type {
+            case .leftMouseDown, .leftMouseUp, .otherMouseDown, .otherMouseUp:
+                return true
+            default:
+                return false
+            }
         }
     }
 }
