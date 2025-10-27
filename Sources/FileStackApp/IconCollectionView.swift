@@ -1,13 +1,30 @@
 import AppKit
 import Combine
 import QuartzCore
+import QuickLook
+import QuickLookUI
 import SwiftUI
+
+private protocol IconCollectionViewKeyHandling: AnyObject {
+    func handleKeyDown(_ event: NSEvent) -> Bool
+}
 
 struct IconCollectionViewRepresentable: NSViewRepresentable {
     let controller: FileStackController
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
+    }
+
+    private final class QuickLookCollectionView: NSCollectionView {
+        weak var keyHandler: IconCollectionViewKeyHandling?
+
+        override func keyDown(with event: NSEvent) {
+            if keyHandler?.handleKeyDown(event) == true {
+                return
+            }
+            super.keyDown(with: event)
+        }
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -21,7 +38,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         layout.minimumLineSpacing = 12
         layout.sectionInset = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
 
-        let collectionView = NSCollectionView()
+        let collectionView = QuickLookCollectionView()
         collectionView.collectionViewLayout = layout
         collectionView.isSelectable = true
         collectionView.allowsMultipleSelection = true
@@ -38,6 +55,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
         context.coordinator.doubleClickRecognizer = doubleClickRecognizer
 
+        collectionView.keyHandler = context.coordinator
         context.coordinator.collectionView = collectionView
 
         scrollView.documentView = collectionView
@@ -61,7 +79,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout {
+    final class Coordinator: NSResponder, IconCollectionViewKeyHandling, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, QLPreviewPanelDataSource, QLPreviewPanelDelegate {
         var controller: FileStackController
         var collectionView: NSCollectionView?
         private var files: [FileItem] = []
@@ -74,12 +92,18 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             thumbnailSize: NSSize(width: 120, height: 120)
         )
         private var scaleCancellable: AnyCancellable?
+        private var quickLookItems: [FileItem] = []
 
         init(parent: IconCollectionViewRepresentable) {
             self.controller = parent.controller
             self.lastKnownScale = parent.controller.previewScale
             super.init()
             bindPreviewScale()
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
         }
 
         func setController(_ controller: FileStackController) {
@@ -90,6 +114,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
 
         private func bindPreviewScale() {
+            scaleCancellable?.cancel()
             scaleCancellable = controller.$previewScale
                 .removeDuplicates()
                 .receive(on: RunLoop.main)
@@ -104,6 +129,15 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             _ = layoutMetrics(for: collectionView)
             collectionView.reloadData()
             applySelectionFromController()
+        }
+
+        func handleKeyDown(_ event: NSEvent) -> Bool {
+            switch event.keyCode {
+            case 49: // Space
+                return toggleQuickLook()
+            default:
+                return false
+            }
         }
 
         @discardableResult
@@ -328,6 +362,8 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 lastUserSelectionIndexPath = desiredIndexPaths.sorted(by: { $0.item < $1.item }).last
             }
             if !wasSuppressing { suppressSelectionUpdates = false }
+
+            refreshQuickLookPanel()
         }
 
         private func indexPath(forFileID id: String) -> IndexPath? {
@@ -356,6 +392,69 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             // Fallback to nearest selected item when click landed in padding
             let adjusted = NSPoint(x: max(location.x, 0), y: max(location.y, 0))
             return collectionView.indexPathForItem(at: adjusted)
+        }
+
+        private func toggleQuickLook() -> Bool {
+            let files = controller.selectedFileItems
+            guard files.isEmpty == false else {
+                NSSound.beep()
+                return true
+            }
+
+            quickLookItems = files
+
+            guard let panel = QLPreviewPanel.shared() else {
+                return true
+            }
+
+            if panel.dataSource !== self {
+                panel.dataSource = self
+                panel.delegate = self
+            }
+
+            if panel.isVisible {
+                panel.orderOut(self)
+            } else {
+                panel.makeKeyAndOrderFront(self)
+                panel.reloadData()
+            }
+
+            return true
+        }
+
+        private func refreshQuickLookPanel() {
+            guard QLPreviewPanel.sharedPreviewPanelExists(),
+                  let panel = QLPreviewPanel.shared(),
+                  panel.isVisible else { return }
+
+            let files = controller.selectedFileItems
+            quickLookItems = files
+            panel.reloadData()
+        }
+
+        // MARK: - Quick Look
+
+        override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
+            true
+        }
+
+        override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+            panel.dataSource = self
+            panel.delegate = self
+        }
+
+        override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+            panel.dataSource = nil
+            panel.delegate = nil
+        }
+
+        func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+            quickLookItems.count
+        }
+
+        func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+            guard index < quickLookItems.count else { return nil }
+            return quickLookItems[index].url as NSURL
         }
     }
 }
