@@ -86,7 +86,7 @@ ribbonPath.fill()
 let iconSizeTarget = NSSize(width: 180, height: 180)
 let iconRect = CGRect(
     x: heroWidth * 0.10,
-    y: heroHeight - iconSizeTarget.height - heroHeight * 0.18,
+    y: heroHeight - iconSizeTarget.height - heroHeight * 0.22,
     width: iconSizeTarget.width,
     height: iconSizeTarget.height
 )
@@ -103,8 +103,8 @@ NSGraphicsContext.current?.restoreGraphicsState()
 
 // Headline and subcopy
 let headline = "File Stack"
-let subCopy = "메뉴바에서 가장 최근의 파일들을 한눈에 모으는 스마트 허브"
-let bulletCopy = "즉시 열람 · 퀵 룩 · 클립보드 작업까지 한 번에"
+let subCopy = "원하는 폴더를 메뉴바에 고정해 언제든 바로 열람"
+let bulletCopy = "폴더별 최신 파일 · 퀵 룩 · 복사/붙여넣기까지 한 번에"
 
 let headlineAttributes: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 70, weight: .bold),
@@ -133,7 +133,7 @@ let cardWidth = heroWidth * 0.40
 let cardHeight = heroHeight * 0.58
 let cardRect = CGRect(
     x: heroWidth - cardWidth - heroWidth * 0.08,
-    y: heroHeight * 0.06,
+    y: heroHeight * 0.04,
     width: cardWidth,
     height: cardHeight
 )
