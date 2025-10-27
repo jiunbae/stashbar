@@ -235,11 +235,17 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
 
         private func layoutMetrics(for collectionView: NSCollectionView) -> IconCollectionLayoutMetrics {
-            let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout
-            let inset = layout?.sectionInset ?? NSEdgeInsets()
+            guard let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout else {
+                return IconCollectionLayoutMetrics(
+                    itemSize: NSSize(width: 140, height: 180),
+                    thumbnailSize: NSSize(width: 120, height: 120)
+                )
+            }
+
+            let inset = layout.sectionInset
             let viewportWidth = collectionView.enclosingScrollView?.contentView.bounds.width ?? collectionView.bounds.width
             let availableWidth = max(viewportWidth - inset.left - inset.right, 100)
-            let spacing = layout?.minimumInteritemSpacing ?? 12
+            let spacing = layout.minimumInteritemSpacing
             let maxColumns = 5
             let minWidth: CGFloat = 60
             let maxWidth: CGFloat = 200
@@ -256,10 +262,17 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             let thumbnailHeight = max(thumbnailWidth * 0.75, 60)
             let totalHeight = thumbnailHeight + 64
 
-            return IconCollectionLayoutMetrics(
+            let metrics = IconCollectionLayoutMetrics(
                 itemSize: NSSize(width: width, height: totalHeight),
                 thumbnailSize: NSSize(width: thumbnailWidth, height: thumbnailHeight)
             )
+
+            if layout.itemSize != metrics.itemSize {
+                layout.itemSize = metrics.itemSize
+                layout.invalidateLayout()
+            }
+
+            return metrics
         }
 
         private func applySelectionFromController() {
