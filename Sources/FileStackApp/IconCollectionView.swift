@@ -23,6 +23,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         collectionView.collectionViewLayout = layout
         collectionView.isSelectable = true
         collectionView.allowsMultipleSelection = true
+        collectionView.allowsEmptySelection = true
         collectionView.backgroundColors = [.clear]
         collectionView.register(IconCollectionItem.self, forItemWithIdentifier: IconCollectionItem.reuseIdentifier)
         collectionView.delegate = context.coordinator
@@ -128,6 +129,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             }
 
             controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
+            lastUserSelectionIndexPath = indexPath
             applySelectionFromController()
             return []
         }
@@ -233,9 +235,11 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
 
         private func layoutMetrics(for collectionView: NSCollectionView) -> IconCollectionLayoutMetrics {
-            let inset = (collectionView.collectionViewLayout as? NSCollectionViewFlowLayout)?.sectionInset ?? NSEdgeInsets()
-            let availableWidth = max(collectionView.bounds.width - inset.left - inset.right, 100)
-            let spacing = (collectionView.collectionViewLayout as? NSCollectionViewFlowLayout)?.minimumInteritemSpacing ?? 12
+            let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout
+            let inset = layout?.sectionInset ?? NSEdgeInsets()
+            let viewportWidth = collectionView.enclosingScrollView?.contentView.bounds.width ?? collectionView.bounds.width
+            let availableWidth = max(viewportWidth - inset.left - inset.right, 100)
+            let spacing = layout?.minimumInteritemSpacing ?? 12
             let maxColumns = 5
             let minWidth: CGFloat = 60
             let maxWidth: CGFloat = 200
@@ -246,7 +250,8 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             var columnCount = Int((availableWidth + spacing) / (targetWidth + spacing))
             columnCount = max(1, min(maxColumns, columnCount))
 
-            let width = (availableWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+            let maxAllowedWidth = (availableWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
+            let width = max(min(targetWidth, maxAllowedWidth), minWidth)
             let thumbnailWidth = max(width - 20, 50)
             let thumbnailHeight = max(thumbnailWidth * 0.75, 60)
             let totalHeight = thumbnailHeight + 64
