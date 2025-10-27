@@ -133,7 +133,7 @@ let cardWidth = heroWidth * 0.40
 let cardHeight = heroHeight * 0.58
 let cardRect = CGRect(
     x: heroWidth - cardWidth - heroWidth * 0.08,
-    y: heroHeight * 0.10,
+    y: heroHeight * 0.06,
     width: cardWidth,
     height: cardHeight
 )
