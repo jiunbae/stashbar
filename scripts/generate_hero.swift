@@ -122,11 +122,11 @@ let bulletAttributes: [NSAttributedString.Key: Any] = [
 ]
 
 let textOriginX = iconRect.maxX + heroWidth * 0.035
-let headlineOriginY = iconRect.maxY - 10
+let headlineOriginY = iconRect.maxY + 20
 
 (headline as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY), withAttributes: headlineAttributes)
-(subCopy as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY - 80), withAttributes: subAttributes)
-(bulletCopy as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY - 130), withAttributes: bulletAttributes)
+(subCopy as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY - 70), withAttributes: subAttributes)
+(bulletCopy as NSString).draw(at: NSPoint(x: textOriginX, y: headlineOriginY - 118), withAttributes: bulletAttributes)
 
 // Screenshot card
 let cardWidth = heroWidth * 0.40
