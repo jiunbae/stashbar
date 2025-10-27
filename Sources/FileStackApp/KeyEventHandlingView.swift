@@ -27,12 +27,25 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
     }
 
     private var previewItems: [FileItem] = []
+    private var keyMonitor: Any?
 
     override var acceptsFirstResponder: Bool { true }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
+        startMonitoringKeys()
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil {
+            stopMonitoringKeys()
+        }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    deinit {
+        stopMonitoringKeys()
     }
 
     override func keyDown(with event: NSEvent) {
@@ -94,6 +107,25 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
             } else {
                 panel.orderOut(self)
             }
+        }
+    }
+
+    private func startMonitoringKeys() {
+        stopMonitoringKeys()
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self else { return event }
+            if event.keyCode == 49 { // Space
+                self.toggleQuickLook()
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func stopMonitoringKeys() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
         }
     }
 }
