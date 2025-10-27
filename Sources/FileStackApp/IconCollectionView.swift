@@ -142,6 +142,17 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
         func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
             guard suppressSelectionUpdates == false else { return }
+
+            if let event = NSApp.currentEvent,
+               isMouseSelectionEvent(event),
+               let indexPath = indexPath(from: event, in: collectionView),
+               indexPath.item < files.count {
+                lastUserSelectionIndexPath = indexPath
+                controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
+                applySelectionFromController()
+                return
+            }
+
             if let newest = collectionView.selectionIndexPaths.sorted(by: { $0.item < $1.item }).last {
                 lastUserSelectionIndexPath = newest
             }
@@ -150,6 +161,20 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
         func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
             guard suppressSelectionUpdates == false else { return }
+            if let event = NSApp.currentEvent,
+               isMouseSelectionEvent(event),
+               let indexPath = indexPath(from: event, in: collectionView),
+               indexPath.item < files.count {
+                controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
+                applySelectionFromController()
+                return
+            }
+
+            if let newest = collectionView.selectionIndexPaths.sorted(by: { $0.item < $1.item }).last {
+                lastUserSelectionIndexPath = newest
+            } else {
+                lastUserSelectionIndexPath = nil
+            }
             syncSelectionToController()
         }
 
@@ -310,6 +335,28 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return IndexPath(item: index, section: 0)
         }
 
+        private func modifiers(from event: NSEvent?) -> NSEvent.ModifierFlags {
+            event?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+        }
+
+        private func isMouseSelectionEvent(_ event: NSEvent) -> Bool {
+            switch event.type {
+            case .leftMouseDown, .leftMouseUp, .otherMouseDown, .otherMouseUp:
+                return true
+            default:
+                return false
+            }
+        }
+
+        private func indexPath(from event: NSEvent, in collectionView: NSCollectionView) -> IndexPath? {
+            let location = collectionView.convert(event.locationInWindow, from: nil)
+            if let indexPath = collectionView.indexPathForItem(at: location) {
+                return indexPath
+            }
+            // Fallback to nearest selected item when click landed in padding
+            let adjusted = NSPoint(x: max(location.x, 0), y: max(location.y, 0))
+            return collectionView.indexPathForItem(at: adjusted)
+        }
     }
 }
 
