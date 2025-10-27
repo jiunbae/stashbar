@@ -153,35 +153,6 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             syncSelectionToController()
         }
 
-        func collectionView(_ collectionView: NSCollectionView, shouldSelectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
-            guard let indexPath = indexPaths.first, indexPath.item < files.count else {
-                return indexPaths
-            }
-
-            guard let event = NSApp.currentEvent, isMouseSelectionEvent(event) else {
-                return indexPaths
-            }
-
-            controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
-            lastUserSelectionIndexPath = indexPath
-            applySelectionFromController()
-            return []
-        }
-
-        func collectionView(_ collectionView: NSCollectionView, shouldDeselectItemsAt indexPaths: Set<IndexPath>) -> Set<IndexPath> {
-            guard let indexPath = indexPaths.first, indexPath.item < files.count else {
-                return indexPaths
-            }
-
-            guard let event = NSApp.currentEvent, isMouseSelectionEvent(event) else {
-                return indexPaths
-            }
-
-            controller.handleSelection(of: files[indexPath.item], modifiers: modifiers(from: event))
-            applySelectionFromController()
-            return []
-        }
-
         func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
             layoutMetrics(for: collectionView).itemSize
         }
@@ -339,18 +310,6 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return IndexPath(item: index, section: 0)
         }
 
-        private func modifiers(from event: NSEvent?) -> NSEvent.ModifierFlags {
-            event?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
-        }
-
-        private func isMouseSelectionEvent(_ event: NSEvent) -> Bool {
-            switch event.type {
-            case .leftMouseDown, .leftMouseUp, .otherMouseDown, .otherMouseUp:
-                return true
-            default:
-                return false
-            }
-        }
     }
 }
 
