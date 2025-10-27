@@ -88,12 +88,19 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
         previewItems = [file]
 
         guard let panel = QLPreviewPanel.shared() else { return }
+
         if panel.isVisible {
             panel.orderOut(self)
-        } else {
-            panel.makeKeyAndOrderFront(self)
-            panel.reloadData()
+            window?.makeFirstResponder(self)
+            return
         }
+
+        panel.dataSource = self
+        panel.delegate = self
+        panel.currentPreviewItemIndex = 0
+        panel.reloadData()
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(self)
     }
 
     private func refreshPreviewPanel() {
@@ -127,5 +134,9 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
         }
+    }
+
+    func previewPanelWillClose(_ panel: QLPreviewPanel!) {
+        window?.makeFirstResponder(self)
     }
 }
