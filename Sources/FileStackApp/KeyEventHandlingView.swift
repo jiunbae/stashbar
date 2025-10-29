@@ -109,6 +109,8 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
             if let file = selectedFile {
                 previewItems = [file]
                 panel.reloadData()
+                panel.currentPreviewItemIndex = 0
+                panel.refreshCurrentPreviewItem()
             } else {
                 panel.orderOut(self)
             }
