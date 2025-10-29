@@ -246,39 +246,43 @@ private struct FileListRow: View {
     let onOpen: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(nsImage: FileIconCache.shared.icon(for: file.url, size: iconSize))
-                .resizable()
-                .scaledToFit()
-                .frame(width: iconSize.width, height: iconSize.height)
-                .cornerRadius(4)
+        Button {
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(modifiers)
+        } label: {
+            HStack(spacing: 12) {
+                Image(nsImage: FileIconCache.shared.icon(for: file.url, size: iconSize))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconSize.width, height: iconSize.height)
+                    .cornerRadius(4)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(file.displayName)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                Text(detailText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(file.displayName)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    Text(detailText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
             }
-
-            Spacer(minLength: 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(background)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(background)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .contentShape(Rectangle())
-        .onTapGesture {
-            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
-            onSelect(modifiers)
-        }
-        .onTapGesture(count: 2) {
-            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
-            onSelect(modifiers)
-            onOpen()
-        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            TapGesture(count: 2).onEnded {
+                let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+                onSelect(modifiers)
+                onOpen()
+            }
+        )
     }
 
     private var detailText: String {
@@ -401,40 +405,44 @@ private struct FileHierarchyRow: View {
     let onOpen: (FileItem) -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(nsImage: FileIconCache.shared.icon(for: entry.file.url, size: iconSize))
-                .resizable()
-                .scaledToFit()
-                .frame(width: iconSize.width, height: iconSize.height)
+        Button {
+            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            onSelect(entry.file, modifiers)
+        } label: {
+            HStack(spacing: 10) {
+                Image(nsImage: FileIconCache.shared.icon(for: entry.file.url, size: iconSize))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconSize.width, height: iconSize.height)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.file.displayName)
-                    .lineLimit(1)
-                if let subtitle = subtitleText {
-                    Text(subtitle)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.file.displayName)
                         .lineLimit(1)
+                    if let subtitle = subtitleText {
+                        Text(subtitle)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
-            }
 
-            Spacer(minLength: 6)
+                Spacer(minLength: 6)
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
+            )
         }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            TapGesture(count: 2).onEnded {
+                let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+                onSelect(entry.file, modifiers)
+                onOpen(entry.file)
+            }
         )
-        .onTapGesture {
-            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
-            onSelect(entry.file, modifiers)
-        }
-        .onTapGesture(count: 2) {
-            let modifiers = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
-            onSelect(entry.file, modifiers)
-            onOpen(entry.file)
-        }
     }
 
     private var subtitleText: String? {
