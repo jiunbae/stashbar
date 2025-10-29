@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showPopover(sender: Any?) {
         guard let button = statusItem.button else { return }
+        controller.setInterfaceActive(true)
         popover.contentViewController = NSHostingController(rootView: ContentView(controller: controller))
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         positionPopover(relativeTo: button)
@@ -82,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func closePopover(sender: Any?) {
+        controller.setInterfaceActive(false)
         popover.performClose(sender)
     }
 

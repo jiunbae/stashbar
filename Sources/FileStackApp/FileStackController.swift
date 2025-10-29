@@ -56,6 +56,8 @@ final class FileStackController: ObservableObject {
     private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
     private let cutPasteboardType = NSPasteboard.PasteboardType("com.file-stack.cut-indicator")
     private var pendingCutURLs: [URL] = []
+    private var isInterfaceActive = false
+    private var pendingReloadFolderIDs: Set<UUID> = []
 
     init() {
         if let rawValue = defaults.string(forKey: viewModeKey),
@@ -194,6 +196,15 @@ final class FileStackController: ObservableObject {
         previewScale = clamped
         defaults.set(clamped, forKey: previewScaleKey)
         prefetchThumbnails(for: currentFiles)
+    }
+
+    func setInterfaceActive(_ active: Bool) {
+        guard isInterfaceActive != active else { return }
+        isInterfaceActive = active
+        if active {
+            processPendingReloads()
+            prefetchThumbnails(for: currentFiles)
+        }
     }
 
     func clearAlert() {
@@ -402,6 +413,15 @@ final class FileStackController: ObservableObject {
     }
 
     private func reload(folderID: UUID) {
+        if isInterfaceActive == false {
+            pendingReloadFolderIDs.insert(folderID)
+            return
+        }
+        pendingReloadFolderIDs.remove(folderID)
+        performReload(folderID: folderID)
+    }
+
+    private func performReload(folderID: UUID) {
         guard let folder = folders.first(where: { $0.id == folderID }) else { return }
         let folderURL = folder.url
         let limit = maxItemsPerFolder
@@ -410,6 +430,10 @@ final class FileStackController: ObservableObject {
             let files = FileStackController.loadFiles(at: folderURL, limit: limit)
             DispatchQueue.main.async {
                 guard let self else { return }
+                guard self.isInterfaceActive else {
+                    self.pendingReloadFolderIDs.insert(folderID)
+                    return
+                }
                 self.apply(files: files, to: folderID)
             }
         }
@@ -479,10 +503,30 @@ final class FileStackController: ObservableObject {
     }
 
     private func prefetchThumbnails(for files: [FileItem]) {
-        guard viewMode == .icon else { return }
+        guard viewMode == .icon, isInterfaceActive else { return }
         let size = tileSizeForCurrentScale()
         let urls = files.prefix(20).map { $0.url }
         ThumbnailCache.shared.prefetch(urls: urls, size: size)
+    }
+
+    private func processPendingReloads() {
+        guard isInterfaceActive else { return }
+
+        let idsToReload: [UUID]
+        if pendingReloadFolderIDs.isEmpty {
+            if let selectedID = selectedFolder?.id {
+                idsToReload = [selectedID]
+            } else {
+                idsToReload = []
+            }
+        } else {
+            idsToReload = Array(pendingReloadFolderIDs)
+        }
+        pendingReloadFolderIDs.removeAll()
+
+        for id in idsToReload {
+            performReload(folderID: id)
+        }
     }
 
     private func tileSizeForCurrentScale() -> CGSize {
