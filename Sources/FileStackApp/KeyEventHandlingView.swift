@@ -8,26 +8,35 @@ struct KeyEventHandlingView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> KeyEventHandlingNSView {
         let view = KeyEventHandlingNSView()
-        view.selectedFile = selectedFile
+        view.updateSelectedFile(selectedFile)
         return view
     }
 
     func updateNSView(_ nsView: KeyEventHandlingNSView, context: Context) {
-        nsView.selectedFile = selectedFile
+        nsView.updateSelectedFile(selectedFile)
     }
 }
 
 final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewPanelDelegate {
-    var selectedFile: FileItem? {
-        didSet {
-            if oldValue?.id != selectedFile?.id {
-                refreshPreviewPanel()
-            }
-        }
-    }
-
+    private(set) var selectedFile: FileItem?
     private var previewItems: [FileItem] = []
     private var keyMonitor: Any?
+
+    func updateSelectedFile(_ newFile: FileItem?) {
+        let oldFile = selectedFile
+        selectedFile = newFile
+
+        // Refresh preview panel if:
+        // 1. The file ID changed (different file selected)
+        // 2. The file is the same path but might have different content (same ID but panel is visible)
+        let idChanged = oldFile?.id != newFile?.id
+        let panelNeedsRefresh = QLPreviewPanel.sharedPreviewPanelExists() &&
+                                QLPreviewPanel.shared()?.isVisible == true
+
+        if idChanged || panelNeedsRefresh {
+            refreshPreviewPanel()
+        }
+    }
 
     override var acceptsFirstResponder: Bool { false }
 
