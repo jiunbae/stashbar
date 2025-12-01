@@ -30,8 +30,8 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
         // 1. The file ID changed (different file selected)
         // 2. The file is the same path but might have different content (same ID but panel is visible)
         let idChanged = oldFile?.id != newFile?.id
-        let panelNeedsRefresh = QLPreviewPanel.sharedPreviewPanelExists() &&
-                                QLPreviewPanel.shared()?.isVisible == true
+        let panel = QLPreviewPanel.sharedPreviewPanelExists() ? QLPreviewPanel.shared() : nil
+        let panelNeedsRefresh = panel?.isVisible == true
 
         if idChanged || panelNeedsRefresh {
             refreshPreviewPanel()
