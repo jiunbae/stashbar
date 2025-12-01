@@ -84,26 +84,35 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         private var suppressSelectionUpdates = false
         private var lastUserSelectionIndexPath: IndexPath?
         private var lastKnownScale: Double
+        private var lastKnownSortOption: SortOption
+        private var lastKnownSortDirection: SortDirection
         fileprivate var doubleClickRecognizer: NSClickGestureRecognizer?
         private var currentMetrics = IconCollectionLayoutMetrics(
             itemSize: NSSize(width: 140, height: 180),
             thumbnailSize: NSSize(width: 120, height: 120)
         )
         private var scaleCancellable: AnyCancellable?
+        private var sortCancellables: Set<AnyCancellable> = []
         private var skipNextSelectionSync = false
 
         init(parent: IconCollectionViewRepresentable) {
             self.controller = parent.controller
             self.lastKnownScale = parent.controller.previewScale
+            self.lastKnownSortOption = parent.controller.sortOption
+            self.lastKnownSortDirection = parent.controller.sortDirection
             super.init()
             bindPreviewScale()
+            bindSortChanges()
         }
 
         func setController(_ controller: FileStackController) {
             guard self.controller !== controller else { return }
             self.controller = controller
             lastKnownScale = controller.previewScale
+            lastKnownSortOption = controller.sortOption
+            lastKnownSortDirection = controller.sortDirection
             bindPreviewScale()
+            bindSortChanges()
         }
 
         private func bindPreviewScale() {
@@ -114,6 +123,41 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 .sink { [weak self] _ in
                     self?.handlePreviewScaleChange()
                 }
+        }
+
+        private func bindSortChanges() {
+            sortCancellables.removeAll()
+
+            controller.$sortOption
+                .removeDuplicates()
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in
+                    self?.handleSortChange()
+                }
+                .store(in: &sortCancellables)
+
+            controller.$sortDirection
+                .removeDuplicates()
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in
+                    self?.handleSortChange()
+                }
+                .store(in: &sortCancellables)
+        }
+
+        private func handleSortChange() {
+            guard let collectionView else { return }
+            let sortChanged = lastKnownSortOption != controller.sortOption ||
+                            lastKnownSortDirection != controller.sortDirection
+
+            if sortChanged {
+                lastKnownSortOption = controller.sortOption
+                lastKnownSortDirection = controller.sortDirection
+                // Force immediate reload with new sorted data
+                files = controller.currentFiles
+                collectionView.reloadData()
+                applySelectionFromController()
+            }
         }
 
         private func handlePreviewScaleChange() {

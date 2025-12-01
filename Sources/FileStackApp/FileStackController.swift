@@ -18,6 +18,8 @@ final class FileStackController: ObservableObject {
     @Published var alertMessage: String?
     @Published var viewMode: FileViewMode
     @Published var previewScale: Double
+    @Published var sortOption: SortOption
+    @Published var sortDirection: SortDirection
     @Published private(set) var launchesAtLogin: Bool
 
     var selectedFolder: WatchedFolder? {
@@ -52,6 +54,8 @@ final class FileStackController: ObservableObject {
     private let fileManager = FileManager.default
     private let viewModeKey = "ViewModePreference"
     private let previewScaleKey = "PreviewScalePreference"
+    private let sortOptionKey = "SortOptionPreference"
+    private let sortDirectionKey = "SortDirectionPreference"
     private let launchAtLoginKey = "LaunchAtLoginPreference"
     private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
     private let cutPasteboardType = NSPasteboard.PasteboardType("com.file-stack.cut-indicator")
@@ -69,6 +73,20 @@ final class FileStackController: ObservableObject {
 
         let storedScale = defaults.double(forKey: previewScaleKey)
         previewScale = previewScaleRange.contains(storedScale) ? storedScale : 1.0
+
+        if let rawValue = defaults.string(forKey: sortOptionKey),
+           let option = SortOption(rawValue: rawValue) {
+            sortOption = option
+        } else {
+            sortOption = .dateModified
+        }
+
+        if let rawValue = defaults.string(forKey: sortDirectionKey),
+           let direction = SortDirection(rawValue: rawValue) {
+            sortDirection = direction
+        } else {
+            sortDirection = .descending
+        }
 
         if #available(macOS 13.0, *) {
             launchesAtLogin = SMAppService.mainApp.status == .enabled
@@ -196,6 +214,20 @@ final class FileStackController: ObservableObject {
         previewScale = clamped
         defaults.set(clamped, forKey: previewScaleKey)
         prefetchThumbnails(for: currentFiles)
+    }
+
+    func setSortOption(_ option: SortOption) {
+        guard sortOption != option else { return }
+        sortOption = option
+        defaults.set(option.rawValue, forKey: sortOptionKey)
+        refreshSelectedFolder()
+    }
+
+    func setSortDirection(_ direction: SortDirection) {
+        guard sortDirection != direction else { return }
+        sortDirection = direction
+        defaults.set(direction.rawValue, forKey: sortDirectionKey)
+        refreshSelectedFolder()
     }
 
     func setInterfaceActive(_ active: Bool) {
@@ -425,9 +457,11 @@ final class FileStackController: ObservableObject {
         guard let folder = folders.first(where: { $0.id == folderID }) else { return }
         let folderURL = folder.url
         let limit = maxItemsPerFolder
+        let option = sortOption
+        let direction = sortDirection
 
         workerQueue.async { [weak self] in
-            let files = FileStackController.loadFiles(at: folderURL, limit: limit)
+            let files = FileStackController.loadFiles(at: folderURL, limit: limit, sortOption: option, sortDirection: direction)
             DispatchQueue.main.async {
                 guard let self else { return }
                 guard self.isInterfaceActive else {
@@ -441,7 +475,16 @@ final class FileStackController: ObservableObject {
 
     private func apply(files: [FileItem], to folderID: UUID) {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
-        folders[index].files = files
+
+        // Force @Published update by creating completely new array
+        // This ensures SwiftUI and Combine properly detect the change
+        var newFolders = folders
+        newFolders[index].files = files
+
+        // Explicitly notify before assigning to ensure proper update sequence
+        objectWillChange.send()
+        folders = newFolders
+
         if folderID == selectedFolderID {
             updateSelectionForCurrentFolder()
         } else if viewMode == .icon {
@@ -593,7 +636,7 @@ final class FileStackController: ObservableObject {
         return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
-    private static func loadFiles(at folderURL: URL, limit: Int) -> [FileItem] {
+    private static func loadFiles(at folderURL: URL, limit: Int, sortOption: SortOption, sortDirection: SortDirection) -> [FileItem] {
         let resourceKeys: Set<URLResourceKey> = [
             .localizedNameKey,
             .contentModificationDateKey,
@@ -618,9 +661,37 @@ final class FileStackController: ObservableObject {
         }
 
         let sorted = entries.sorted { lhs, rhs in
-            let lhsDate = lhs.1.contentModificationDate ?? .distantPast
-            let rhsDate = rhs.1.contentModificationDate ?? .distantPast
-            return lhsDate > rhsDate
+            let ascending = sortDirection == .ascending
+
+            switch sortOption {
+            case .name:
+                let lhsName = lhs.1.localizedName ?? lhs.0.lastPathComponent
+                let rhsName = rhs.1.localizedName ?? rhs.0.lastPathComponent
+                return ascending ? lhsName.localizedStandardCompare(rhsName) == .orderedAscending
+                             : lhsName.localizedStandardCompare(rhsName) == .orderedDescending
+
+            case .dateModified:
+                let lhsDate = lhs.1.contentModificationDate ?? .distantPast
+                let rhsDate = rhs.1.contentModificationDate ?? .distantPast
+                return ascending ? lhsDate < rhsDate : lhsDate > rhsDate
+
+            case .size:
+                let lhsSize = lhs.1.fileSize ?? 0
+                let rhsSize = rhs.1.fileSize ?? 0
+                return ascending ? lhsSize < rhsSize : lhsSize > rhsSize
+
+            case .kind:
+                let lhsIsDir = lhs.1.isDirectory ?? false
+                let rhsIsDir = rhs.1.isDirectory ?? false
+
+                if lhsIsDir != rhsIsDir {
+                    return ascending ? !lhsIsDir : lhsIsDir
+                }
+
+                let lhsType = lhs.1.typeIdentifier ?? ""
+                let rhsType = rhs.1.typeIdentifier ?? ""
+                return ascending ? lhsType < rhsType : lhsType > rhsType
+            }
         }
 
         return sorted.prefix(limit).map { entry in
