@@ -65,3 +65,51 @@ enum FileViewMode: String, CaseIterable, Identifiable {
         }
     }
 }
+
+enum SortOption: String, CaseIterable, Identifiable {
+    case name
+    case kind
+    case dateModified
+    case size
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .name: return "이름"
+        case .kind: return "종류"
+        case .dateModified: return "수정 날짜"
+        case .size: return "크기"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .name: return "textformat"
+        case .kind: return "doc"
+        case .dateModified: return "calendar"
+        case .size: return "chart.bar"
+        }
+    }
+}
+
+enum SortDirection: String, CaseIterable, Identifiable {
+    case ascending
+    case descending
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .ascending: return "오름차순"
+        case .descending: return "내림차순"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .ascending: return "chevron.up"
+        case .descending: return "chevron.down"
+        }
+    }
+}

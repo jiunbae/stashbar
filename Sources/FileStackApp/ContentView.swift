@@ -17,6 +17,20 @@ struct ContentView: View {
         )
     }
 
+    private var sortOptionBinding: Binding<SortOption> {
+        Binding(
+            get: { controller.sortOption },
+            set: { controller.setSortOption($0) }
+        )
+    }
+
+    private var sortDirectionBinding: Binding<SortDirection> {
+        Binding(
+            get: { controller.sortDirection },
+            set: { controller.setSortDirection($0) }
+        )
+    }
+
     private var alertBinding: Binding<Bool> {
         Binding(
             get: { controller.alertMessage != nil },
@@ -52,38 +66,76 @@ struct ContentView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 0) {
                 if controller.folders.isEmpty {
                     Text("감시할 폴더를 추가하세요")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else if let selected = controller.selectedFolder {
-                    Image(systemName: "folder.fill")
-                        .foregroundStyle(.secondary)
-                    Picker("폴더", selection: Binding(
-                        get: { controller.selectedFolderID ?? selected.id },
-                        set: { controller.selectedFolderID = $0 }
-                    )) {
-                        ForEach(controller.folders) { folder in
-                            Text(folder.displayName)
-                                .tag(folder.id as UUID?)
+                    HStack(spacing: 6) {
+                        Image(systemName: "folder.fill")
+                            .foregroundStyle(.secondary)
+                            .imageScale(.small)
+                        Picker("폴더", selection: Binding(
+                            get: { controller.selectedFolderID ?? selected.id },
+                            set: { controller.selectedFolderID = $0 }
+                        )) {
+                            ForEach(controller.folders) { folder in
+                                Text(folder.displayName)
+                                    .tag(folder.id as UUID?)
+                            }
+                        }
+                        .labelsHidden()
+                        .font(.system(size: 13))
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 0) {
+                    Menu {
+                        ForEach(SortOption.allCases) { option in
+                            Button {
+                                controller.setSortOption(option)
+                            } label: {
+                                HStack {
+                                    Text(option.title)
+                                    if controller.sortOption == option {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: controller.sortOption.systemImageName)
+                            .frame(width: 20, height: 20)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .help("정렬 기준: \(controller.sortOption.title)")
+
+                    Button {
+                        let newDirection: SortDirection = controller.sortDirection == .descending ? .ascending : .descending
+                        controller.setSortDirection(newDirection)
+                    } label: {
+                        Image(systemName: controller.sortDirection.systemImageName)
+                            .frame(width: 20, height: 20)
+                    }
+                    .buttonStyle(.bordered)
+                    .fixedSize()
+                    .help(controller.sortDirection.title)
+
+                    Picker("", selection: viewModeBinding) {
+                        ForEach(FileViewMode.allCases) { mode in
+                            Image(systemName: mode.systemImageName)
+                                .tag(mode)
+                                .help(mode.title)
                         }
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: 220)
+                    .pickerStyle(.segmented)
+                    .fixedSize()
                 }
-
-                Spacer()
-
-                Picker("", selection: viewModeBinding) {
-                    ForEach(FileViewMode.allCases) { mode in
-                        Image(systemName: mode.systemImageName)
-                            .tag(mode)
-                            .help(mode.title)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
+                .fixedSize()
             }
 
             if controller.folders.isEmpty {
