@@ -128,18 +128,10 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         private func bindSortChanges() {
             sortCancellables.removeAll()
 
-            controller.$sortOption
-                .removeDuplicates()
+            Publishers.CombineLatest(controller.$sortOption, controller.$sortDirection)
+                .removeDuplicates(by: { $0 == $1 })
                 .receive(on: RunLoop.main)
-                .sink { [weak self] _ in
-                    self?.handleSortChange()
-                }
-                .store(in: &sortCancellables)
-
-            controller.$sortDirection
-                .removeDuplicates()
-                .receive(on: RunLoop.main)
-                .sink { [weak self] _ in
+                .sink { [weak self] _, _ in
                     self?.handleSortChange()
                 }
                 .store(in: &sortCancellables)

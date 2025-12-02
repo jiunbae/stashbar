@@ -74,19 +74,8 @@ final class FileStackController: ObservableObject {
         let storedScale = defaults.double(forKey: previewScaleKey)
         previewScale = previewScaleRange.contains(storedScale) ? storedScale : 1.0
 
-        if let rawValue = defaults.string(forKey: sortOptionKey),
-           let option = SortOption(rawValue: rawValue) {
-            sortOption = option
-        } else {
-            sortOption = .dateModified
-        }
-
-        if let rawValue = defaults.string(forKey: sortDirectionKey),
-           let direction = SortDirection(rawValue: rawValue) {
-            sortDirection = direction
-        } else {
-            sortDirection = .descending
-        }
+        sortOption = defaults.string(forKey: sortOptionKey).flatMap(SortOption.init) ?? .dateModified
+        sortDirection = defaults.string(forKey: sortDirectionKey).flatMap(SortDirection.init) ?? .descending
 
         if #available(macOS 13.0, *) {
             launchesAtLogin = SMAppService.mainApp.status == .enabled
@@ -476,13 +465,8 @@ final class FileStackController: ObservableObject {
     private func apply(files: [FileItem], to folderID: UUID) {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
 
-        // Force @Published update by creating completely new array
-        // This ensures SwiftUI and Combine properly detect the change
         var newFolders = folders
         newFolders[index].files = files
-
-        // Explicitly notify before assigning to ensure proper update sequence
-        objectWillChange.send()
         folders = newFolders
 
         if folderID == selectedFolderID {
@@ -667,8 +651,8 @@ final class FileStackController: ObservableObject {
             case .name:
                 let lhsName = lhs.1.localizedName ?? lhs.0.lastPathComponent
                 let rhsName = rhs.1.localizedName ?? rhs.0.lastPathComponent
-                return ascending ? lhsName.localizedStandardCompare(rhsName) == .orderedAscending
-                             : lhsName.localizedStandardCompare(rhsName) == .orderedDescending
+                let comparison = lhsName.localizedStandardCompare(rhsName)
+                return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
 
             case .dateModified:
                 let lhsDate = lhs.1.contentModificationDate ?? .distantPast
@@ -685,12 +669,13 @@ final class FileStackController: ObservableObject {
                 let rhsIsDir = rhs.1.isDirectory ?? false
 
                 if lhsIsDir != rhsIsDir {
-                    return ascending ? !lhsIsDir : lhsIsDir
+                    return lhsIsDir
                 }
 
                 let lhsType = lhs.1.typeIdentifier ?? ""
                 let rhsType = rhs.1.typeIdentifier ?? ""
-                return ascending ? lhsType < rhsType : lhsType > rhsType
+                let comparison = lhsType.localizedStandardCompare(rhsType)
+                return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
             }
         }
 

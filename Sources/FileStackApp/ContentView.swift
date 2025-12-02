@@ -94,18 +94,13 @@ struct ContentView: View {
 
                 HStack(spacing: 0) {
                     Menu {
-                        ForEach(SortOption.allCases) { option in
-                            Button {
-                                controller.setSortOption(option)
-                            } label: {
-                                HStack {
-                                    Text(option.title)
-                                    if controller.sortOption == option {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
+                        Picker("정렬 기준", selection: sortOptionBinding) {
+                            ForEach(SortOption.allCases) { option in
+                                Text(option.title).tag(option)
                             }
                         }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
                     } label: {
                         Image(systemName: controller.sortOption.systemImageName)
                             .frame(width: 20, height: 20)
