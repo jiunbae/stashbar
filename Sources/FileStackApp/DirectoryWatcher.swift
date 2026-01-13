@@ -30,7 +30,7 @@ final class DirectoryWatcher {
             paths,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             0.3,
-            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes)
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot)
         ) else {
             throw WatcherError.failedToCreate
         }
