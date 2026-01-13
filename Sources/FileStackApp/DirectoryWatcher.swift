@@ -37,7 +37,10 @@ final class DirectoryWatcher {
 
         self.stream = stream
         FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
-        FSEventStreamStart(stream)
+        if !FSEventStreamStart(stream) {
+            cancel()
+            throw WatcherError.failedToCreate
+        }
     }
 
     func cancel() {
