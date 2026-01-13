@@ -1,37 +1,54 @@
-import Darwin
+import CoreServices
 import Foundation
 
 final class DirectoryWatcher {
     enum WatcherError: Error {
-        case failedToOpen(errno: Int32)
+        case failedToCreate
     }
 
-    private let fileDescriptor: CInt
-    private let source: DispatchSourceFileSystemObject
+    private var stream: FSEventStreamRef?
+    private let eventHandler: () -> Void
 
     init(url: URL, eventHandler: @escaping () -> Void) throws {
-        let descriptor = open(url.path, O_EVTONLY)
-        guard descriptor != -1 else {
-            throw WatcherError.failedToOpen(errno: errno)
+        self.eventHandler = eventHandler
+
+        var context = FSEventStreamContext()
+        context.info = Unmanaged.passUnretained(self).toOpaque()
+
+        let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
+            guard let info = info else { return }
+            let watcher = Unmanaged<DirectoryWatcher>.fromOpaque(info).takeUnretainedValue()
+            watcher.eventHandler()
         }
-        fileDescriptor = descriptor
-        source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: descriptor,
-            eventMask: [.write, .rename, .delete, .attrib],
-            queue: .main
-        )
-        source.setEventHandler(handler: eventHandler)
-        source.setCancelHandler {
-            close(descriptor)
+
+        let paths = [url.path] as CFArray
+
+        guard let stream = FSEventStreamCreate(
+            nil,
+            callback,
+            &context,
+            paths,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            0.3,
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes)
+        ) else {
+            throw WatcherError.failedToCreate
         }
-        source.resume()
+
+        self.stream = stream
+        FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
+        FSEventStreamStart(stream)
     }
 
     func cancel() {
-        source.cancel()
+        guard let stream = stream else { return }
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        self.stream = nil
     }
 
     deinit {
-        source.cancel()
+        cancel()
     }
 }
