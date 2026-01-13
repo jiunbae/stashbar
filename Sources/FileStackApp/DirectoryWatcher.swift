@@ -42,7 +42,6 @@ final class DirectoryWatcher {
 
     func cancel() {
         guard let stream = stream else { return }
-        FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
         FSEventStreamRelease(stream)
         self.stream = nil
