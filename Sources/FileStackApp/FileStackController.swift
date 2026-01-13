@@ -426,8 +426,10 @@ final class FileStackController: ObservableObject {
                 self?.reload(folderID: folder.id)
             }
             watchers[folder.id] = watcher
-        } catch DirectoryWatcher.WatcherError.failedToCreate {
+        } catch DirectoryWatcher.WatcherError.failedToCreateStream {
             alertMessage = "폴더 감시 스트림 생성에 실패했습니다."
+        } catch DirectoryWatcher.WatcherError.failedToStartStream {
+            alertMessage = "폴더 감시 스트림 시작에 실패했습니다."
         } catch {
             alertMessage = "폴더 감시에 실패했습니다: \(error.localizedDescription)"
         }

@@ -3,26 +3,35 @@ import Foundation
 
 final class DirectoryWatcher {
     enum WatcherError: Error {
-        case failedToCreate
+        case failedToCreateStream
+        case failedToStartStream
     }
 
     private var stream: FSEventStreamRef?
     private let eventHandler: () -> Void
 
+    private class WeakBox {
+        weak var watcher: DirectoryWatcher?
+        init(_ watcher: DirectoryWatcher) {
+            self.watcher = watcher
+        }
+    }
+
     init(url: URL, eventHandler: @escaping () -> Void) throws {
         self.eventHandler = eventHandler
 
+        let weakBox = WeakBox(self)
         var context = FSEventStreamContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
-        context.info = Unmanaged.passRetained(self).toOpaque()
+        context.info = Unmanaged.passRetained(weakBox).toOpaque()
         context.release = { ptr in
             guard let ptr = ptr else { return }
-            Unmanaged<DirectoryWatcher>.fromOpaque(ptr).release()
+            Unmanaged<WeakBox>.fromOpaque(ptr).release()
         }
 
         let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
             guard let info = info else { return }
-            let watcher = Unmanaged<DirectoryWatcher>.fromOpaque(info).takeUnretainedValue()
-            watcher.eventHandler()
+            let box = Unmanaged<WeakBox>.fromOpaque(info).takeUnretainedValue()
+            box.watcher?.eventHandler()
         }
 
         let paths = [url.path] as CFArray
@@ -36,14 +45,14 @@ final class DirectoryWatcher {
             0.3,
             FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot)
         ) else {
-            throw WatcherError.failedToCreate
+            throw WatcherError.failedToCreateStream
         }
 
         self.stream = stream
         FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
         if !FSEventStreamStart(stream) {
             cancel()
-            throw WatcherError.failedToCreate
+            throw WatcherError.failedToStartStream
         }
     }
 
