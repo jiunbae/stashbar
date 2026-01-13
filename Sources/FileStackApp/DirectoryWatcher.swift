@@ -12,8 +12,12 @@ final class DirectoryWatcher {
     init(url: URL, eventHandler: @escaping () -> Void) throws {
         self.eventHandler = eventHandler
 
-        var context = FSEventStreamContext()
-        context.info = Unmanaged.passUnretained(self).toOpaque()
+        var context = FSEventStreamContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
+        context.info = Unmanaged.passRetained(self).toOpaque()
+        context.release = { ptr in
+            guard let ptr = ptr else { return }
+            Unmanaged<DirectoryWatcher>.fromOpaque(ptr).release()
+        }
 
         let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
             guard let info = info else { return }
@@ -45,6 +49,7 @@ final class DirectoryWatcher {
 
     func cancel() {
         guard let stream = stream else { return }
+        FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
         FSEventStreamRelease(stream)
         self.stream = nil
