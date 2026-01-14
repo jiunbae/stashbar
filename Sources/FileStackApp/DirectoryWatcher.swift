@@ -1,37 +1,70 @@
-import Darwin
+import CoreServices
 import Foundation
 
 final class DirectoryWatcher {
     enum WatcherError: Error {
-        case failedToOpen(errno: Int32)
+        case failedToCreateStream
+        case failedToStartStream
     }
 
-    private let fileDescriptor: CInt
-    private let source: DispatchSourceFileSystemObject
+    private var stream: FSEventStreamRef?
+    private let eventHandler: () -> Void
+
+    private class WeakBox {
+        weak var watcher: DirectoryWatcher?
+        init(_ watcher: DirectoryWatcher) {
+            self.watcher = watcher
+        }
+    }
 
     init(url: URL, eventHandler: @escaping () -> Void) throws {
-        let descriptor = open(url.path, O_EVTONLY)
-        guard descriptor != -1 else {
-            throw WatcherError.failedToOpen(errno: errno)
+        self.eventHandler = eventHandler
+
+        let weakBox = WeakBox(self)
+        var context = FSEventStreamContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
+        context.info = Unmanaged.passRetained(weakBox).toOpaque()
+        context.release = { ptr in
+            guard let ptr = ptr else { return }
+            Unmanaged<WeakBox>.fromOpaque(ptr).release()
         }
-        fileDescriptor = descriptor
-        source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: descriptor,
-            eventMask: [.write, .rename, .delete, .attrib],
-            queue: .main
-        )
-        source.setEventHandler(handler: eventHandler)
-        source.setCancelHandler {
-            close(descriptor)
+
+        let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
+            guard let info = info else { return }
+            let box = Unmanaged<WeakBox>.fromOpaque(info).takeUnretainedValue()
+            box.watcher?.eventHandler()
         }
-        source.resume()
+
+        let paths = [url.path] as CFArray
+
+        guard let stream = FSEventStreamCreate(
+            nil,
+            callback,
+            &context,
+            paths,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            0.3,
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot)
+        ) else {
+            throw WatcherError.failedToCreateStream
+        }
+
+        self.stream = stream
+        FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
+        if !FSEventStreamStart(stream) {
+            cancel()
+            throw WatcherError.failedToStartStream
+        }
     }
 
     func cancel() {
-        source.cancel()
+        guard let stream = stream else { return }
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        self.stream = nil
     }
 
     deinit {
-        source.cancel()
+        cancel()
     }
 }
