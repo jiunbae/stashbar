@@ -59,7 +59,10 @@ struct ContentView: View {
             Text(controller.alertMessage ?? "")
         }
         .overlay(
-            KeyEventHandlingView(selectedFile: controller.selectedFile)
+            KeyEventHandlingView(
+                selectedFile: controller.selectedFile,
+                refreshToken: controller.currentFiles.hashValue
+            )
                 .frame(width: 0, height: 0)
         )
     }
