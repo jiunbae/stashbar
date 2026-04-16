@@ -163,15 +163,69 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         @discardableResult
         func applyUpdates(with newFiles: [FileItem]) -> Bool {
             let scaleChanged = abs(lastKnownScale - controller.previewScale) > 0.0001
-            let dataChanged = files != newFiles
+
+            // Fast path: skip all work if nothing changed (e.g. selection-only update)
+            if files == newFiles && !scaleChanged {
+                return false
+            }
+
+            let oldFiles = files
             files = newFiles
-            if dataChanged || scaleChanged {
-                collectionView?.reloadData()
+
+            if scaleChanged {
                 lastKnownScale = controller.previewScale
+                collectionView?.reloadData()
                 applySelectionFromController()
                 return true
             }
-            return false
+
+            guard let collectionView else { return false }
+
+            let oldIDs = oldFiles.map { $0.id }
+            let newIDs = newFiles.map { $0.id }
+
+            if oldIDs == newIDs {
+                // Same files, just metadata may have changed - lightweight update
+                for indexPath in collectionView.indexPathsForVisibleItems() {
+                    guard indexPath.item < newFiles.count,
+                          let item = collectionView.item(at: indexPath) as? IconCollectionItem else { continue }
+                    item.updateMetadata(with: newFiles[indexPath.item])
+                }
+                return false
+            }
+
+            let oldSet = Set(oldIDs)
+            let newSet = Set(newIDs)
+            let removedIDs = oldSet.subtracting(newSet)
+            let insertedIDs = newSet.subtracting(oldSet)
+
+            let removeIndexPaths = Set(oldIDs.enumerated().compactMap { index, id in
+                removedIDs.contains(id) ? IndexPath(item: index, section: 0) : nil
+            })
+            let insertIndexPaths = Set(newIDs.enumerated().compactMap { index, id in
+                insertedIDs.contains(id) ? IndexPath(item: index, section: 0) : nil
+            })
+
+            // Check if surviving items were reordered (batch update can't handle this)
+            let oldSurvivors = oldIDs.filter { newSet.contains($0) }
+            let newSurvivors = newIDs.filter { oldSet.contains($0) }
+            let hasReorder = oldSurvivors != newSurvivors
+
+            if hasReorder || (removeIndexPaths.isEmpty && insertIndexPaths.isEmpty) {
+                collectionView.reloadData()
+            } else {
+                collectionView.performBatchUpdates({
+                    if !removeIndexPaths.isEmpty {
+                        collectionView.deleteItems(at: removeIndexPaths)
+                    }
+                    if !insertIndexPaths.isEmpty {
+                        collectionView.insertItems(at: insertIndexPaths)
+                    }
+                }, completionHandler: nil)
+            }
+
+            applySelectionFromController()
+            return true
         }
 
         func updateSelection(from controller: FileStackController) {
@@ -210,11 +264,6 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 }
             }
 
-            if event.keyCode == 51 { // Delete
-                controller.deleteSelectedFiles()
-                return true
-            }
-
             return false
         }
 
@@ -228,9 +277,9 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             guard let item = collectionView.makeItem(withIdentifier: IconCollectionItem.reuseIdentifier, for: indexPath) as? IconCollectionItem else {
                 return NSCollectionViewItem()
             }
+            guard indexPath.item < files.count else { return item }
             let file = files[indexPath.item]
-            let metrics = layoutMetrics(for: collectionView)
-            item.configure(with: file, metrics: metrics)
+            item.configure(with: file, metrics: currentMetrics)
             return item
         }
 
@@ -253,11 +302,12 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
 
         func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
-            layoutMetrics(for: collectionView).itemSize
+            currentMetrics.itemSize
         }
 
         func collectionView(_ collectionView: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> NSPasteboardWriting? {
-            files[indexPath.item].url as NSURL
+            guard indexPath.item < files.count else { return nil }
+            return files[indexPath.item].url as NSURL
         }
 
         func collectionView(_ collectionView: NSCollectionView, menuForItemsAt indexPaths: Set<IndexPath>, point: NSPoint) -> NSMenu? {
@@ -270,7 +320,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 effectiveIndexPaths = [hovered]
             }
 
-            guard let indexPath = effectiveIndexPaths.first else { return nil }
+            guard let indexPath = effectiveIndexPaths.first, indexPath.item < files.count else { return nil }
             let file = files[indexPath.item]
             let menu = NSMenu(title: "파일")
             let showInFinder = NSMenuItem(title: "Finder에서 보기", action: #selector(openInFinder(_:)), keyEquivalent: "")
@@ -560,6 +610,13 @@ private struct IconCollectionLayoutMetrics {
         }
 
         updateSelectionAppearance()
+    }
+
+    /// Lightweight update: only refresh text labels without touching thumbnails or starting tasks
+    func updateMetadata(with file: FileItem) {
+        guard file.id == currentFileID else { return }
+        nameLabel.stringValue = file.displayName
+        detailLabel.stringValue = detailText(for: file)
     }
 
     @MainActor

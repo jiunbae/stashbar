@@ -215,20 +215,17 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder
     private var hierarchyView: some View {
         if let folderURL = controller.selectedFolder?.url {
-            let refreshToken = controller.currentFiles.map { $0.id }.joined(separator: ":")
-            return AnyView(
-                HierarchyBrowser(
-                    rootURL: folderURL,
-                    refreshToken: refreshToken,
-                    selectedFileIDs: controller.selectedFileIDs,
-                    onSelect: { file, modifiers in controller.handleSelection(of: file, modifiers: modifiers) },
-                    onOpen: { NSWorkspace.shared.open($0.url) }
-                )
+            let refreshToken = controller.currentFiles.map { $0.id }.hashValue
+            HierarchyBrowser(
+                rootURL: folderURL,
+                refreshToken: "\(refreshToken)",
+                selectedFileIDs: controller.selectedFileIDs,
+                onSelect: { file, modifiers in controller.handleSelection(of: file, modifiers: modifiers) },
+                onOpen: { NSWorkspace.shared.open($0.url) }
             )
-        } else {
-            return AnyView(EmptyView())
         }
     }
 
@@ -430,9 +427,6 @@ private struct HierarchyBrowser: View {
         }
         .task(id: refreshToken) {
             await loadTree()
-        }
-        .onChange(of: refreshToken) { _ in
-            rootEntry = nil
         }
     }
 

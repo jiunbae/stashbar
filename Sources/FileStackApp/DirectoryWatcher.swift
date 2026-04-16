@@ -42,9 +42,12 @@ final class DirectoryWatcher {
             &context,
             paths,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-            0.3,
-            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot)
+            0.1,
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagNoDefer)
         ) else {
+            if let info = context.info {
+                Unmanaged<WeakBox>.fromOpaque(info).release()
+            }
             throw WatcherError.failedToCreateStream
         }
 

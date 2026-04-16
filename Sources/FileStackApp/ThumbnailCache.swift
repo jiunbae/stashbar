@@ -9,6 +9,10 @@ final class ThumbnailCache: @unchecked Sendable {
     private let cache = NSCache<NSURL, NSImage>()
     private let queue = DispatchQueue(label: "com.file-stack.thumbnail", qos: .userInitiated)
     private let logger = Logger(subsystem: "com.file-stack.app", category: "thumbnail")
+    private let screenScale: CGFloat = {
+        // Captured once during init on main thread
+        NSScreen.main?.backingScaleFactor ?? 2.0
+    }()
 
     private init() {
         cache.countLimit = 200
@@ -20,7 +24,7 @@ final class ThumbnailCache: @unchecked Sendable {
     }
 
     func store(_ image: NSImage, for url: URL) {
-        let cost = Int(image.size.width * image.size.height)
+        let cost = Int(image.size.width * image.size.height * 4)
         cache.setObject(image, forKey: url as NSURL, cost: cost)
     }
 
@@ -52,7 +56,7 @@ final class ThumbnailCache: @unchecked Sendable {
             let request = QLThumbnailGenerator.Request(
                 fileAt: url,
                 size: size,
-                scale: NSScreen.main?.backingScaleFactor ?? 2.0,
+                scale: screenScale,
                 representationTypes: .thumbnail
             )
 

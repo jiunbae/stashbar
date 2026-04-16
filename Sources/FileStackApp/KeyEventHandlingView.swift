@@ -54,7 +54,16 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
     }
 
     deinit {
-        stopMonitoringKeys()
+        if Thread.isMainThread {
+            stopMonitoringKeys()
+        } else {
+            let monitor = keyMonitor
+            DispatchQueue.main.async {
+                if let monitor {
+                    NSEvent.removeMonitor(monitor)
+                }
+            }
+        }
     }
 
     override func keyDown(with event: NSEvent) {
@@ -85,7 +94,8 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
     }
 
     func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
-        previewItems[index].url as NSURL
+        guard index >= 0, index < previewItems.count else { return nil }
+        return previewItems[index].url as NSURL
     }
 
     private func toggleQuickLook() {
@@ -118,6 +128,8 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
         if panel.isVisible {
             if let file = selectedFile {
                 previewItems = [file]
+                panel.dataSource = self
+                panel.delegate = self
                 panel.reloadData()
                 panel.currentPreviewItemIndex = 0
                 panel.refreshCurrentPreviewItem()
@@ -129,9 +141,14 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
 
     private func startMonitoringKeys() {
         stopMonitoringKeys()
+        guard window != nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             guard let self else { return event }
             if event.keyCode == 49 { // Space
+                if let responder = event.window?.firstResponder,
+                   responder is NSText || responder is NSTextField {
+                    return event
+                }
                 self.toggleQuickLook()
                 return nil
             }

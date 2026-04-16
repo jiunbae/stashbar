@@ -10,6 +10,9 @@ final class FileStackController: ObservableObject {
         didSet {
             if selectedFolderID != oldValue {
                 updateSelectionForCurrentFolder()
+                if viewMode == .icon, isInterfaceActive {
+                    prefetchThumbnails(for: currentFiles)
+                }
             }
         }
     }
@@ -84,6 +87,12 @@ final class FileStackController: ObservableObject {
         }
 
         loadPersistedFolders()
+    }
+
+    deinit {
+        for watcher in watchers.values {
+            watcher.cancel()
+        }
     }
 
     func addFolder(url: URL) {
@@ -220,6 +229,7 @@ final class FileStackController: ObservableObject {
     }
 
     func setInterfaceActive(_ active: Bool) {
+        dispatchPrecondition(condition: .onQueue(.main))
         guard isInterfaceActive != active else { return }
         isInterfaceActive = active
         if active {
@@ -275,7 +285,9 @@ final class FileStackController: ObservableObject {
             return
         }
 
-        let isCutOperation = pasteboard.string(forType: cutPasteboardType) == "cut" && pendingCutURLs.isEmpty == false
+        let capturedCutURLs = pendingCutURLs
+        pendingCutURLs = []
+        let isCutOperation = pasteboard.string(forType: cutPasteboardType) == "cut" && !capturedCutURLs.isEmpty
         let destinationFolder = folder.url
 
         workerQueue.async { [weak self] in
@@ -284,6 +296,10 @@ final class FileStackController: ObservableObject {
             var errors: [String] = []
 
             for sourceURL in urls {
+                guard self.fileManager.fileExists(atPath: sourceURL.path) else {
+                    errors.append("\(sourceURL.lastPathComponent): 파일을 찾을 수 없습니다.")
+                    continue
+                }
                 let destination = self.uniqueDestinationURL(for: sourceURL, in: destinationFolder)
                 do {
                     if isCutOperation {
@@ -301,7 +317,6 @@ final class FileStackController: ObservableObject {
                     self.alertMessage = "파일 붙여넣기에 실패했습니다:\n" + errors.joined(separator: "\n")
                     NSSound.beep()
                 }
-                self.pendingCutURLs = []
                 pasteboard.setString("copy", forType: self.cutPasteboardType)
                 self.refreshSelectedFolder()
             }
@@ -436,6 +451,7 @@ final class FileStackController: ObservableObject {
     }
 
     private func reload(folderID: UUID) {
+        dispatchPrecondition(condition: .onQueue(.main))
         if isInterfaceActive == false {
             pendingReloadFolderIDs.insert(folderID)
             return
@@ -445,6 +461,7 @@ final class FileStackController: ObservableObject {
     }
 
     private func performReload(folderID: UUID) {
+        dispatchPrecondition(condition: .onQueue(.main))
         guard let folder = folders.first(where: { $0.id == folderID }) else { return }
         let folderURL = folder.url
         let limit = maxItemsPerFolder
@@ -465,15 +482,19 @@ final class FileStackController: ObservableObject {
     }
 
     private func apply(files: [FileItem], to folderID: UUID) {
+        dispatchPrecondition(condition: .onQueue(.main))
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
 
-        var newFolders = folders
-        newFolders[index].files = files
-        folders = newFolders
+        let oldFiles = folders[index].files
+        folders[index].files = files
 
-        if folderID == selectedFolderID {
+        let isSelected = folderID == selectedFolderID
+        if isSelected {
             updateSelectionForCurrentFolder()
-        } else if viewMode == .icon {
+        }
+
+        // Only prefetch when file data actually changed
+        if viewMode == .icon && oldFiles != files {
             prefetchThumbnails(for: files)
         }
     }
@@ -527,8 +548,6 @@ final class FileStackController: ObservableObject {
         } else if selectionAnchorID == nil {
             selectionAnchorID = primarySelectedFileID
         }
-
-        prefetchThumbnails(for: files)
     }
 
     private func prefetchThumbnails(for files: [FileItem]) {
@@ -579,7 +598,8 @@ final class FileStackController: ObservableObject {
         let baseName = destination.deletingPathExtension().lastPathComponent
 
         var copyIndex = 1
-        while fileManager.fileExists(atPath: destination.path) {
+        let maxAttempts = 10000
+        while fileManager.fileExists(atPath: destination.path), copyIndex <= maxAttempts {
             let suffix = copyIndex == 1 ? " copy" : " copy \(copyIndex)"
             let newName: String
             if pathExtension.isEmpty {
