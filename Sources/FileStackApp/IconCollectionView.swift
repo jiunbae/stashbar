@@ -547,6 +547,16 @@ private struct IconCollectionLayoutMetrics {
         thumbnailHeightConstraint?.constant = thumbSize.height
 
         thumbnailTask?.cancel()
+
+        // Sync cache check first — eliminates the generic-icon flash that previously
+        // appeared every time a cell was configured, even when the thumbnail was
+        // already cached. The async path runs only on a true cache miss.
+        if file.isDirectory == false, let cached = ThumbnailCache.shared.image(for: file.url) {
+            thumbnailView.image = cached
+            updateSelectionAppearance()
+            return
+        }
+
         thumbnailView.image = FileIconCache.shared.icon(for: file.url, size: thumbSize)
 
         guard file.isDirectory == false else {
@@ -556,14 +566,6 @@ private struct IconCollectionLayoutMetrics {
 
         thumbnailTask = Task { [weak self] in
             guard let self else { return }
-            if let cached = ThumbnailCache.shared.image(for: file.url) {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    applyThumbnailOnMain(cached, for: file)
-                }
-                return
-            }
-
             if let loaded = await ThumbnailCache.shared.loadThumbnail(for: file.url, size: thumbSize) {
                 await MainActor.run { [weak self] in
                     guard let self else { return }
