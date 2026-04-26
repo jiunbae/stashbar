@@ -44,9 +44,9 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         scrollView.drawsBackground = false
 
         let layout = NSCollectionViewFlowLayout()
-        layout.minimumInteritemSpacing = 12
-        layout.minimumLineSpacing = 12
-        layout.sectionInset = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        layout.minimumInteritemSpacing = 6
+        layout.minimumLineSpacing = 6
+        layout.sectionInset = NSEdgeInsets(top: 4, left: 4, bottom: 4, right: 4)
 
         let collectionView = FileCollectionView()
         collectionView.collectionViewLayout = layout
@@ -255,14 +255,30 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             if let newest {
                 lastUserSelectionIndexPath = newest
             }
-            syncControllerSelectionFromCollectionView(focused: newest)
+            scheduleSelectionSync()
         }
 
         func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
             guard suppressSelectionUpdates == false else { return }
             let newest = collectionView.selectionIndexPaths.sorted(by: { $0.item < $1.item }).last
             lastUserSelectionIndexPath = newest
-            syncControllerSelectionFromCollectionView(focused: newest)
+            scheduleSelectionSync()
+        }
+
+        // A single click that changes selection fires both didDeselect (for the old item)
+        // and didSelect (for the new item). Without coalescing, each fires its own model
+        // sync and a SwiftUI invalidation cycle. Defer to the next runloop turn so both
+        // delegate calls collapse into one sync using the final NSCollectionView state.
+        private var pendingSelectionSync = false
+
+        private func scheduleSelectionSync() {
+            guard !pendingSelectionSync else { return }
+            pendingSelectionSync = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.pendingSelectionSync = false
+                self.syncControllerSelectionFromCollectionView(focused: self.lastUserSelectionIndexPath)
+            }
         }
 
         func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
@@ -383,9 +399,9 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
             let maxAllowedWidth = (availableWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
             let width = max(min(targetWidth, maxAllowedWidth), minWidth)
-            let thumbnailWidth = max(width - 20, 50)
+            let thumbnailWidth = max(width - 12, 50)
             let thumbnailHeight = max(thumbnailWidth * 0.75, 60)
-            let totalHeight = thumbnailHeight + 64
+            let totalHeight = thumbnailHeight + 50
 
             let metrics = IconCollectionLayoutMetrics(
                 itemSize: NSSize(width: width, height: totalHeight),
@@ -486,7 +502,7 @@ private struct IconCollectionLayoutMetrics {
 
         contentStack.orientation = .vertical
         contentStack.alignment = .centerX
-        contentStack.spacing = 8
+        contentStack.spacing = 4
         contentStack.translatesAutoresizingMaskIntoConstraints = false
 
         roundedBackground.translatesAutoresizingMaskIntoConstraints = false
@@ -509,10 +525,10 @@ private struct IconCollectionLayoutMetrics {
             roundedBackground.topAnchor.constraint(equalTo: view.topAnchor),
             roundedBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            contentStack.leadingAnchor.constraint(equalTo: roundedBackground.leadingAnchor, constant: 8),
-            contentStack.trailingAnchor.constraint(equalTo: roundedBackground.trailingAnchor, constant: -8),
-            contentStack.topAnchor.constraint(equalTo: roundedBackground.topAnchor, constant: 8),
-            contentStack.bottomAnchor.constraint(equalTo: roundedBackground.bottomAnchor, constant: -8)
+            contentStack.leadingAnchor.constraint(equalTo: roundedBackground.leadingAnchor, constant: 4),
+            contentStack.trailingAnchor.constraint(equalTo: roundedBackground.trailingAnchor, constant: -4),
+            contentStack.topAnchor.constraint(equalTo: roundedBackground.topAnchor, constant: 4),
+            contentStack.bottomAnchor.constraint(equalTo: roundedBackground.bottomAnchor, constant: -4)
         ])
 
         thumbnailWidthConstraint = thumbnailView.widthAnchor.constraint(equalToConstant: 120)
@@ -566,7 +582,11 @@ private struct IconCollectionLayoutMetrics {
 
         thumbnailTask = Task { [weak self] in
             guard let self else { return }
-            if let loaded = await ThumbnailCache.shared.loadThumbnail(for: file.url, size: thumbSize) {
+            if let loaded = await ThumbnailCache.shared.loadThumbnail(
+                for: file.url,
+                size: thumbSize,
+                sourceModified: file.modificationDate
+            ) {
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     applyThumbnailOnMain(loaded, for: file)

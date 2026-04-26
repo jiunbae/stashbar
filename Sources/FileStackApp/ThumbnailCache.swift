@@ -32,31 +32,36 @@ final class ThumbnailCache: @unchecked Sendable {
         cache.setObject(image, forKey: url as NSURL, cost: cost)
     }
 
-    func loadThumbnail(for url: URL, size: CGSize) async -> NSImage? {
+    func loadThumbnail(for url: URL, size: CGSize, sourceModified: Date? = nil) async -> NSImage? {
         if let cached = image(for: url) {
             return cached
         }
         return await withCheckedContinuation { continuation in
-            requestThumbnail(for: url, size: size) { image in
+            requestThumbnail(for: url, size: size, sourceModified: sourceModified) { image in
                 continuation.resume(returning: image)
             }
         }
     }
 
-    func prefetch(urls: [URL], size: CGSize) {
+    func prefetch(urls: [(url: URL, sourceModified: Date?)], size: CGSize) {
         queue.async { [weak self] in
             guard let self else { return }
-            for url in urls {
-                if self.image(for: url) != nil { continue }
-                self.requestThumbnail(for: url, size: size, completion: { _ in })
+            for entry in urls {
+                if self.image(for: entry.url) != nil { continue }
+                self.requestThumbnail(for: entry.url, size: size, sourceModified: entry.sourceModified, completion: { _ in })
             }
         }
     }
 
-    /// Coalesces concurrent requests for the same URL: only the first request dispatches
-    /// to QLThumbnailGenerator; subsequent requests attach their completion to the
-    /// in-flight list and fire when the original completes.
-    private func requestThumbnail(for url: URL, size: CGSize, completion: @escaping (NSImage?) -> Void) {
+    /// Coalesces concurrent requests for the same URL: only the first request hits disk
+    /// and (if that misses) QuickLookGenerator; subsequent requests attach a callback to
+    /// the in-flight list and wake when the original resolves.
+    private func requestThumbnail(
+        for url: URL,
+        size: CGSize,
+        sourceModified: Date?,
+        completion: @escaping (NSImage?) -> Void
+    ) {
         if let cached = image(for: url) {
             completion(cached)
             return
@@ -73,19 +78,36 @@ final class ThumbnailCache: @unchecked Sendable {
 
         queue.async { [weak self] in
             guard let self else { return }
-            self.generateThumbnail(for: url, size: size) { [weak self] image in
-                guard let self else { return }
-                self.inFlightLock.lock()
-                let callbacks = self.inFlight.removeValue(forKey: url) ?? []
-                self.inFlightLock.unlock()
-                for callback in callbacks {
-                    callback(image)
-                }
+
+            // Try disk cache before paying for QuickLook generation.
+            if let mtime = sourceModified,
+               let diskImage = DiskThumbnailCache.shared.image(for: url, sourceModified: mtime) {
+                self.store(diskImage, for: url)
+                self.fireInFlight(for: url, with: diskImage)
+                return
+            }
+
+            self.generateThumbnail(for: url, size: size, sourceModified: sourceModified) { [weak self] image in
+                self?.fireInFlight(for: url, with: image)
             }
         }
     }
 
-    private func generateThumbnail(for url: URL, size: CGSize, completion: @escaping (NSImage?) -> Void) {
+    private func fireInFlight(for url: URL, with image: NSImage?) {
+        inFlightLock.lock()
+        let callbacks = inFlight.removeValue(forKey: url) ?? []
+        inFlightLock.unlock()
+        for callback in callbacks {
+            callback(image)
+        }
+    }
+
+    private func generateThumbnail(
+        for url: URL,
+        size: CGSize,
+        sourceModified: Date?,
+        completion: @escaping (NSImage?) -> Void
+    ) {
         autoreleasepool {
             let request = QLThumbnailGenerator.Request(
                 fileAt: url,
@@ -101,6 +123,9 @@ final class ThumbnailCache: @unchecked Sendable {
                         let renderedSize = NSSize(width: size.width, height: size.height)
                         let image = NSImage(cgImage: cgImage, size: renderedSize)
                         ThumbnailCache.shared.store(image, for: url)
+                        if let sourceModified {
+                            DiskThumbnailCache.shared.store(image, for: url, sourceModified: sourceModified)
+                        }
                         completion(image)
                     } else {
                         DispatchQueue.main.async {

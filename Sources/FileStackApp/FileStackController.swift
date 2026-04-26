@@ -473,8 +473,8 @@ final class FileStackController: ObservableObject {
         // so off-screen items have thumbnails ready by the time scrolling reveals them.
         // The file list is already capped at maxItemsPerFolder, so this is bounded work.
         let size = CGSize(width: 120, height: 90)
-        let urls = files.map { $0.url }
-        ThumbnailCache.shared.prefetch(urls: urls, size: size)
+        let entries = files.map { (url: $0.url, sourceModified: $0.modificationDate) }
+        ThumbnailCache.shared.prefetch(urls: entries, size: size)
     }
 
     private func processPendingReloads() {
