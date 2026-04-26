@@ -469,8 +469,11 @@ final class FileStackController: ObservableObject {
 
     private func prefetchThumbnails(for files: [FileItem]) {
         guard viewMode == .icon, isInterfaceActive else { return }
-        let size = CGSize(width: 120, height: 90)  // sensible default; cache is keyed by URL only
-        let urls = files.prefix(20).map { $0.url }
+        // Cache is keyed by URL only (size doesn't affect hit/miss). Prefetch ALL files
+        // so off-screen items have thumbnails ready by the time scrolling reveals them.
+        // The file list is already capped at maxItemsPerFolder, so this is bounded work.
+        let size = CGSize(width: 120, height: 90)
+        let urls = files.map { $0.url }
         ThumbnailCache.shared.prefetch(urls: urls, size: size)
     }
 
