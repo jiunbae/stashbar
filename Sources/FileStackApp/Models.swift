@@ -1,14 +1,13 @@
 import Foundation
 
 struct FileItem: Identifiable, Hashable {
+    let id: String
     let url: URL
     let displayName: String
     let modificationDate: Date?
     let fileSize: Int64?
     let typeIdentifier: String?
     let isDirectory: Bool
-
-    var id: String { url.path }
 
     var relativeDateDescription: String {
         guard let date = modificationDate else { return "알 수 없음" }
@@ -22,6 +21,7 @@ struct FileItem: Identifiable, Hashable {
     }()
 
     init(url: URL, values: URLResourceValues) {
+        self.id = url.path
         self.url = url
         self.displayName = values.localizedName ?? url.lastPathComponent
         self.modificationDate = values.contentModificationDate

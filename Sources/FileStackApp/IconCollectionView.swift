@@ -1,5 +1,4 @@
 import AppKit
-import Combine
 import QuartzCore
 import SwiftUI
 
@@ -20,6 +19,8 @@ private final class FileCollectionView: NSCollectionView {
 
 struct IconCollectionViewRepresentable: NSViewRepresentable {
     let controller: FileStackController
+    let selectedFileIDs: Set<String>
+    let primarySelectedFileID: String?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -61,16 +62,17 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        context.coordinator.setController(controller)
-
         guard let collectionView = context.coordinator.collectionView,
               let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout else {
             return
         }
 
+        context.coordinator.cachedSelectedIDs = selectedFileIDs
+        context.coordinator.cachedPrimaryID = primarySelectedFileID
+
         _ = context.coordinator.layoutMetrics(for: collectionView)
         let needsLayout = context.coordinator.applyUpdates(with: controller.currentFiles)
-        context.coordinator.updateSelection(from: controller)
+        context.coordinator.applySelection()
 
         if needsLayout {
             layout.invalidateLayout()
@@ -78,86 +80,36 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
     }
 
     final class Coordinator: NSObject, IconCollectionCommandHandling, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout {
-        var controller: FileStackController
+        let controller: FileStackController
         var collectionView: NSCollectionView?
         private var files: [FileItem] = []
+        private var fileIDToIndex: [String: Int] = [:]
         private var suppressSelectionUpdates = false
         private var lastUserSelectionIndexPath: IndexPath?
         private var lastKnownScale: Double
-        private var lastKnownSortOption: SortOption
-        private var lastKnownSortDirection: SortDirection
         fileprivate var doubleClickRecognizer: NSClickGestureRecognizer?
         private var currentMetrics = IconCollectionLayoutMetrics(
             itemSize: NSSize(width: 140, height: 180),
             thumbnailSize: NSSize(width: 120, height: 120)
         )
-        private var scaleCancellable: AnyCancellable?
-        private var sortCancellables: Set<AnyCancellable> = []
         private var skipNextSelectionSync = false
+
+        // Latest selection values pushed in via updateNSView. Keeping them here lets the
+        // coordinator re-apply selection without reading through `controller.selectionState`.
+        var cachedSelectedIDs: Set<String> = []
+        var cachedPrimaryID: String?
 
         init(parent: IconCollectionViewRepresentable) {
             self.controller = parent.controller
             self.lastKnownScale = parent.controller.previewScale
-            self.lastKnownSortOption = parent.controller.sortOption
-            self.lastKnownSortDirection = parent.controller.sortDirection
             super.init()
-            bindPreviewScale()
-            bindSortChanges()
         }
 
-        func setController(_ controller: FileStackController) {
-            guard self.controller !== controller else { return }
-            self.controller = controller
-            lastKnownScale = controller.previewScale
-            lastKnownSortOption = controller.sortOption
-            lastKnownSortDirection = controller.sortDirection
-            bindPreviewScale()
-            bindSortChanges()
-        }
-
-        private func bindPreviewScale() {
-            scaleCancellable?.cancel()
-            scaleCancellable = controller.$previewScale
-                .removeDuplicates()
-                .receive(on: RunLoop.main)
-                .sink { [weak self] _ in
-                    self?.handlePreviewScaleChange()
-                }
-        }
-
-        private func bindSortChanges() {
-            sortCancellables.removeAll()
-
-            Publishers.CombineLatest(controller.$sortOption, controller.$sortDirection)
-                .removeDuplicates(by: { $0 == $1 })
-                .receive(on: RunLoop.main)
-                .sink { [weak self] _, _ in
-                    self?.handleSortChange()
-                }
-                .store(in: &sortCancellables)
-        }
-
-        private func handleSortChange() {
-            guard let collectionView else { return }
-            let sortChanged = lastKnownSortOption != controller.sortOption ||
-                            lastKnownSortDirection != controller.sortDirection
-
-            if sortChanged {
-                lastKnownSortOption = controller.sortOption
-                lastKnownSortDirection = controller.sortDirection
-                // Force immediate reload with new sorted data
-                files = controller.currentFiles
-                collectionView.reloadData()
-                applySelectionFromController()
+        private func rebuildFileIDIndex() {
+            fileIDToIndex.removeAll(keepingCapacity: true)
+            for (index, file) in files.enumerated() {
+                fileIDToIndex[file.id] = index
             }
-        }
-
-        private func handlePreviewScaleChange() {
-            guard let collectionView else { return }
-            lastKnownScale = controller.previewScale
-            _ = layoutMetrics(for: collectionView)
-            collectionView.reloadData()
-            applySelectionFromController()
         }
 
         @discardableResult
@@ -171,11 +123,12 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
             let oldFiles = files
             files = newFiles
+            rebuildFileIDIndex()
 
             if scaleChanged {
                 lastKnownScale = controller.previewScale
                 collectionView?.reloadData()
-                applySelectionFromController()
+                applySelectionFromCache()
                 return true
             }
 
@@ -224,16 +177,16 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 }, completionHandler: nil)
             }
 
-            applySelectionFromController()
+            applySelectionFromCache()
             return true
         }
 
-        func updateSelection(from controller: FileStackController) {
+        func applySelection() {
             if skipNextSelectionSync {
                 skipNextSelectionSync = false
                 return
             }
-            applySelectionFromController()
+            applySelectionFromCache()
         }
 
         func handleCommandKey(_ event: NSEvent) -> Bool {
@@ -438,10 +391,10 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return metrics
         }
 
-        private func applySelectionFromController() {
+        private func applySelectionFromCache() {
             guard let collectionView else { return }
 
-            let desiredIndexPaths = Set(controller.selectedFileIDs.compactMap(indexPath(forFileID:)))
+            let desiredIndexPaths = Set(cachedSelectedIDs.compactMap(indexPath(forFileID:)))
             let shouldUpdate = collectionView.selectionIndexPaths != desiredIndexPaths
 
             let wasSuppressing = suppressSelectionUpdates
@@ -449,7 +402,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             if shouldUpdate {
                 collectionView.selectionIndexPaths = desiredIndexPaths
             }
-            if let primaryID = controller.primarySelectedFileID,
+            if let primaryID = cachedPrimaryID,
                let path = indexPath(forFileID: primaryID) {
                 lastUserSelectionIndexPath = path
             } else {
@@ -459,8 +412,7 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         }
 
         private func indexPath(forFileID id: String) -> IndexPath? {
-            guard let index = files.firstIndex(where: { $0.id == id }) else { return nil }
-            return IndexPath(item: index, section: 0)
+            fileIDToIndex[id].map { IndexPath(item: $0, section: 0) }
         }
     }
 }
@@ -614,6 +566,7 @@ private struct IconCollectionLayoutMetrics {
 
     /// Lightweight update: only refresh text labels without touching thumbnails or starting tasks
     func updateMetadata(with file: FileItem) {
+        // Defensive: ensure cell hasn't been recycled to a different file
         guard file.id == currentFileID else { return }
         nameLabel.stringValue = file.displayName
         detailLabel.stringValue = detailText(for: file)

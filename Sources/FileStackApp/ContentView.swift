@@ -59,10 +59,7 @@ struct ContentView: View {
             Text(controller.alertMessage ?? "")
         }
         .overlay(
-            KeyEventHandlingView(
-                selectedFile: controller.selectedFile,
-                refreshToken: controller.currentFiles.hashValue
-            )
+            QuickLookOverlay(controller: controller, selection: controller.selectionState)
                 .frame(width: 0, height: 0)
         )
     }
@@ -179,52 +176,21 @@ struct ContentView: View {
     }
 
     private var iconGridView: some View {
-        IconCollectionViewRepresentable(controller: controller)
+        IconGridContainer(controller: controller, selection: controller.selectionState)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var listView: some View {
-        ScrollView {
-            LazyVStack(spacing: 4) {
-                ForEach(controller.currentFiles) { file in
-                    FileListRow(
-                        file: file,
-                        isSelected: controller.isFileSelected(file),
-                        iconSize: CGSize(width: 28, height: 28),
-                        onSelect: { modifiers in
-                            controller.handleSelection(of: file, modifiers: modifiers)
-                        },
-                        onOpen: {
-                            NSWorkspace.shared.open(file.url)
-                        }
-                    )
-                    .contextMenu {
-                        Button("Finder에서 보기") {
-                            NSWorkspace.shared.activateFileViewerSelecting([file.url])
-                        }
-                        Button("파일 열기") {
-                            NSWorkspace.shared.open(file.url)
-                        }
-                    }
-                    .onDrag {
-                        NSItemProvider(object: file.url as NSURL)
-                    }
-                }
-            }
-            .padding(.vertical, 4)
-        }
+        FileListContainer(controller: controller, selection: controller.selectionState)
     }
 
     @ViewBuilder
     private var hierarchyView: some View {
         if let folderURL = controller.selectedFolder?.url {
-            let refreshToken = controller.currentFiles.map { $0.id }.hashValue
-            HierarchyBrowser(
-                rootURL: folderURL,
-                refreshToken: "\(refreshToken)",
-                selectedFileIDs: controller.selectedFileIDs,
-                onSelect: { file, modifiers in controller.handleSelection(of: file, modifiers: modifiers) },
-                onOpen: { NSWorkspace.shared.open($0.url) }
+            HierarchyContainer(
+                controller: controller,
+                selection: controller.selectionState,
+                rootURL: folderURL
             )
         }
     }
@@ -354,6 +320,94 @@ private struct FileListRow: View {
             )
     }
 
+}
+
+// MARK: - Selection-aware containers
+//
+// These wrapper views observe `SelectionState` directly so that selection changes
+// don't invalidate the entire `ContentView` body. Header/footer/folder picker
+// remain bound only to `FileStackController`'s other published properties.
+
+private struct IconGridContainer: View {
+    let controller: FileStackController
+    @ObservedObject var selection: SelectionState
+
+    var body: some View {
+        IconCollectionViewRepresentable(
+            controller: controller,
+            selectedFileIDs: selection.selectedFileIDs,
+            primarySelectedFileID: selection.primarySelectedFileID
+        )
+    }
+}
+
+private struct FileListContainer: View {
+    @ObservedObject var controller: FileStackController
+    @ObservedObject var selection: SelectionState
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(controller.currentFiles) { file in
+                    FileListRow(
+                        file: file,
+                        isSelected: selection.selectedFileIDs.contains(file.id),
+                        iconSize: CGSize(width: 28, height: 28),
+                        onSelect: { modifiers in
+                            controller.handleSelection(of: file, modifiers: modifiers)
+                        },
+                        onOpen: {
+                            NSWorkspace.shared.open(file.url)
+                        }
+                    )
+                    .contextMenu {
+                        Button("Finder에서 보기") {
+                            NSWorkspace.shared.activateFileViewerSelecting([file.url])
+                        }
+                        Button("파일 열기") {
+                            NSWorkspace.shared.open(file.url)
+                        }
+                    }
+                    .onDrag {
+                        NSItemProvider(object: file.url as NSURL)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+private struct HierarchyContainer: View {
+    @ObservedObject var controller: FileStackController
+    @ObservedObject var selection: SelectionState
+    let rootURL: URL
+
+    var body: some View {
+        HierarchyBrowser(
+            rootURL: rootURL,
+            refreshToken: "\(controller.fileListGeneration)",
+            selectedFileIDs: selection.selectedFileIDs,
+            onSelect: { file, modifiers in controller.handleSelection(of: file, modifiers: modifiers) },
+            onOpen: { NSWorkspace.shared.open($0.url) }
+        )
+    }
+}
+
+private struct QuickLookOverlay: View {
+    @ObservedObject var controller: FileStackController
+    @ObservedObject var selection: SelectionState
+
+    var body: some View {
+        let primaryID = selection.primarySelectedFileID
+        let selectedFile = primaryID.flatMap { id in
+            controller.currentFiles.first(where: { $0.id == id })
+        }
+        KeyEventHandlingView(
+            selectedFile: selectedFile,
+            refreshToken: controller.fileListGeneration
+        )
+    }
 }
 
 private struct HierarchyBrowser: View {

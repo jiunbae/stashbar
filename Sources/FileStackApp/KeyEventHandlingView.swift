@@ -46,13 +46,6 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
         startMonitoringKeys()
     }
 
-    override func viewWillMove(toWindow newWindow: NSWindow?) {
-        if newWindow == nil {
-            stopMonitoringKeys()
-        }
-        super.viewWillMove(toWindow: newWindow)
-    }
-
     deinit {
         if Thread.isMainThread {
             stopMonitoringKeys()
@@ -63,15 +56,6 @@ final class KeyEventHandlingNSView: NSView, QLPreviewPanelDataSource, QLPreviewP
                     NSEvent.removeMonitor(monitor)
                 }
             }
-        }
-    }
-
-    override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 49: // Space
-            toggleQuickLook()
-        default:
-            super.keyDown(with: event)
         }
     }
 

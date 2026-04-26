@@ -9,21 +9,28 @@ final class FileStackController: ObservableObject {
     @Published var selectedFolderID: UUID? {
         didSet {
             if selectedFolderID != oldValue {
-                updateSelectionForCurrentFolder()
+                refreshCurrentFilesCache()
+                selectionState.reconcileWithFiles(cachedCurrentFiles)
                 if viewMode == .icon, isInterfaceActive {
                     prefetchThumbnails(for: currentFiles)
                 }
             }
         }
     }
-    @Published private(set) var selectedFileIDs: Set<String> = []
-    @Published private(set) var primarySelectedFileID: String?
+    /// Selection state lives on its own ObservableObject so that selection changes do not
+    /// invalidate the entire ContentView body — only views that observe `selectionState` rebuild.
+    let selectionState = SelectionState()
+
     @Published var alertMessage: String?
     @Published var viewMode: FileViewMode
     @Published var previewScale: Double
     @Published var sortOption: SortOption
     @Published var sortDirection: SortDirection
     @Published private(set) var launchesAtLogin: Bool
+
+    /// Monotonic counter incremented whenever the file list of any watched folder changes.
+    /// Cheaper than hashing `currentFiles` for downstream change detection (e.g. QuickLook refresh).
+    @Published private(set) var fileListGeneration: Int = 0
 
     var selectedFolder: WatchedFolder? {
         guard let selectedFolderID else {
@@ -33,20 +40,20 @@ final class FileStackController: ObservableObject {
     }
 
     var currentFiles: [FileItem] {
-        selectedFolder?.files ?? []
+        cachedCurrentFiles
     }
 
+    private var cachedCurrentFiles: [FileItem] = []
+
     var selectedFile: FileItem? {
-        guard let id = primarySelectedFileID else { return nil }
+        guard let id = selectionState.primarySelectedFileID else { return nil }
         return currentFiles.first(where: { $0.id == id })
     }
 
     var selectedFileItems: [FileItem] {
-        let ids = selectedFileIDs
+        let ids = selectionState.selectedFileIDs
         return currentFiles.filter { ids.contains($0.id) }
     }
-
-    private var selectionAnchorID: String?
 
     private var watchers: [UUID: DirectoryWatcher] = [:]
     private let defaults = UserDefaults.standard
@@ -100,23 +107,19 @@ final class FileStackController: ObservableObject {
     }
 
     func presentFolderSelectionPanel() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        panel.prompt = "선택"
+        panel.title = "감시할 폴더 선택"
 
-            let panel = NSOpenPanel()
-            panel.canChooseFiles = false
-            panel.canChooseDirectories = true
-            panel.allowsMultipleSelection = false
-            panel.canCreateDirectories = false
-            panel.prompt = "선택"
-            panel.title = "감시할 폴더 선택"
+        NSApp.activate(ignoringOtherApps: true)
 
-            NSApp.activate(ignoringOtherApps: true)
-
-            panel.begin { [weak self] response in
-                guard response == .OK, let url = panel.urls.first else { return }
-                self?.addFolder(url: url)
-            }
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.urls.first else { return }
+            self?.addFolder(url: url)
         }
     }
 
@@ -134,73 +137,22 @@ final class FileStackController: ObservableObject {
     }
 
     func handleSelection(of file: FileItem, modifiers: NSEvent.ModifierFlags = []) {
-        let files = currentFiles
-        guard let fileIndex = files.firstIndex(where: { $0.id == file.id }) else { return }
-        let fileID = file.id
-        let anchorID = selectionAnchorID ?? primarySelectedFileID ?? fileID
-
-        if modifiers.contains(.shift),
-           let anchorIndex = files.firstIndex(where: { $0.id == anchorID }) {
-            let lower = min(anchorIndex, fileIndex)
-            let upper = max(anchorIndex, fileIndex)
-            let rangeIDs = Set((lower...upper).map { files[$0].id })
-            selectedFileIDs = rangeIDs
-            primarySelectedFileID = fileID
-            selectionAnchorID = anchorID
-        } else if modifiers.contains(.command) {
-            var updatedSelection = selectedFileIDs
-            if updatedSelection.contains(fileID) {
-                updatedSelection.remove(fileID)
-                selectedFileIDs = updatedSelection
-                if primarySelectedFileID == fileID {
-                    primarySelectedFileID = files.first(where: { updatedSelection.contains($0.id) })?.id
-                }
-            } else {
-                updatedSelection.insert(fileID)
-                selectedFileIDs = updatedSelection
-                primarySelectedFileID = fileID
-            }
-            selectionAnchorID = primarySelectedFileID
-        } else {
-            selectedFileIDs = [fileID]
-            primarySelectedFileID = fileID
-            selectionAnchorID = fileID
-        }
-
-        if selectedFileIDs.isEmpty {
-            primarySelectedFileID = nil
-            selectionAnchorID = nil
-        }
+        selectionState.handleSelection(of: file, in: currentFiles, modifiers: modifiers)
     }
 
     func updateSelection(ids: Set<String>, primaryID: String?) {
-        let validIDs = Set(currentFiles.map { $0.id })
-        let filtered = ids.intersection(validIDs)
-        selectedFileIDs = filtered
-
-        if let primaryID, filtered.contains(primaryID) {
-            primarySelectedFileID = primaryID
-        } else {
-            primarySelectedFileID = filtered.first
-        }
-
-        selectionAnchorID = primarySelectedFileID
-
-        if filtered.isEmpty {
-            primarySelectedFileID = nil
-            selectionAnchorID = nil
-        }
+        selectionState.updateSelection(ids: ids, primaryID: primaryID, in: currentFiles)
     }
 
     func isFileSelected(_ file: FileItem) -> Bool {
-        selectedFileIDs.contains(file.id)
+        selectionState.isFileSelected(file)
     }
 
     func setViewMode(_ mode: FileViewMode) {
         guard viewMode != mode else { return }
         viewMode = mode
         defaults.set(mode.rawValue, forKey: viewModeKey)
-        updateSelectionForCurrentFolder()
+        reconcileSelectionWithCurrentFolder()
         if mode == .icon {
             prefetchThumbnails(for: currentFiles)
         }
@@ -300,8 +252,8 @@ final class FileStackController: ObservableObject {
                     errors.append("\(sourceURL.lastPathComponent): 파일을 찾을 수 없습니다.")
                     continue
                 }
-                let destination = self.uniqueDestinationURL(for: sourceURL, in: destinationFolder)
                 do {
+                    let destination = try self.uniqueDestinationURL(for: sourceURL, in: destinationFolder)
                     if isCutOperation {
                         try self.fileManager.moveItem(at: sourceURL, to: destination)
                     } else {
@@ -317,7 +269,6 @@ final class FileStackController: ObservableObject {
                     self.alertMessage = "파일 붙여넣기에 실패했습니다:\n" + errors.joined(separator: "\n")
                     NSSound.beep()
                 }
-                pasteboard.setString("copy", forType: self.cutPasteboardType)
                 self.refreshSelectedFolder()
             }
         }
@@ -416,14 +367,16 @@ final class FileStackController: ObservableObject {
             if selectedFolderID != preferredID {
                 selectedFolderID = preferredID
             } else {
-                updateSelectionForCurrentFolder()
+                refreshCurrentFilesCache()
+                reconcileSelectionWithCurrentFolder()
             }
             return
         }
 
         if let currentID = selectedFolderID,
            folders.contains(where: { $0.id == currentID }) {
-            updateSelectionForCurrentFolder()
+            refreshCurrentFilesCache()
+            reconcileSelectionWithCurrentFolder()
             return
         }
 
@@ -431,7 +384,8 @@ final class FileStackController: ObservableObject {
         if selectedFolderID != newID {
             selectedFolderID = newID
         } else {
-            updateSelectionForCurrentFolder()
+            refreshCurrentFilesCache()
+            reconcileSelectionWithCurrentFolder()
         }
     }
 
@@ -486,15 +440,16 @@ final class FileStackController: ObservableObject {
         guard let index = folders.firstIndex(where: { $0.id == folderID }) else { return }
 
         let oldFiles = folders[index].files
+        guard oldFiles != files else { return }   // skip @Published fire entirely
         folders[index].files = files
+        fileListGeneration &+= 1
 
-        let isSelected = folderID == selectedFolderID
-        if isSelected {
-            updateSelectionForCurrentFolder()
+        if folderID == selectedFolderID {
+            refreshCurrentFilesCache()
+            reconcileSelectionWithCurrentFolder()
         }
 
-        // Only prefetch when file data actually changed
-        if viewMode == .icon && oldFiles != files {
+        if viewMode == .icon {
             prefetchThumbnails(for: files)
         }
     }
@@ -504,55 +459,17 @@ final class FileStackController: ObservableObject {
         defaults.set(paths, forKey: pathsKey)
     }
 
-    private func updateSelectionForCurrentFolder() {
-        guard let files = selectedFolder?.files, files.isEmpty == false else {
-            if selectedFileIDs.isEmpty == false || primarySelectedFileID != nil {
-                selectedFileIDs = []
-                primarySelectedFileID = nil
-                selectionAnchorID = nil
-            }
-            return
-        }
+    private func refreshCurrentFilesCache() {
+        cachedCurrentFiles = selectedFolder?.files ?? []
+    }
 
-        let validIDs = Set(files.map { $0.id })
-        selectedFileIDs = selectedFileIDs.intersection(validIDs)
-
-        if let primary = primarySelectedFileID, validIDs.contains(primary) == false {
-            primarySelectedFileID = nil
-        }
-
-        if selectedFileIDs.isEmpty {
-            if let primary = primarySelectedFileID, validIDs.contains(primary) {
-                selectedFileIDs = [primary]
-            } else if let first = files.first {
-                selectedFileIDs = [first.id]
-                primarySelectedFileID = first.id
-            }
-        }
-
-        if primarySelectedFileID == nil {
-            if let firstSelected = files.first(where: { selectedFileIDs.contains($0.id) }) {
-                primarySelectedFileID = firstSelected.id
-            } else if let first = files.first {
-                selectedFileIDs = [first.id]
-                primarySelectedFileID = first.id
-            }
-        }
-
-        if let primary = primarySelectedFileID {
-            selectedFileIDs.insert(primary)
-        }
-
-        if let anchor = selectionAnchorID, validIDs.contains(anchor) == false {
-            selectionAnchorID = primarySelectedFileID
-        } else if selectionAnchorID == nil {
-            selectionAnchorID = primarySelectedFileID
-        }
+    private func reconcileSelectionWithCurrentFolder() {
+        selectionState.reconcileWithFiles(cachedCurrentFiles)
     }
 
     private func prefetchThumbnails(for files: [FileItem]) {
         guard viewMode == .icon, isInterfaceActive else { return }
-        let size = tileSizeForCurrentScale()
+        let size = CGSize(width: 120, height: 90)  // sensible default; cache is keyed by URL only
         let urls = files.prefix(20).map { $0.url }
         ThumbnailCache.shared.prefetch(urls: urls, size: size)
     }
@@ -577,29 +494,19 @@ final class FileStackController: ObservableObject {
         }
     }
 
-    private func tileSizeForCurrentScale() -> CGSize {
-        let contentWidth: CGFloat = 360 - 32
-        let spacing: CGFloat = 10
-        let maxColumns = 5
-        var targetWidth = 150 * previewScale
-        targetWidth = min(max(targetWidth, 50), 200)
-
-        var columnCount = Int((contentWidth + spacing) / (targetWidth + spacing))
-        columnCount = max(1, min(maxColumns, columnCount))
-
-        let width = (contentWidth - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        let height = max(width * 0.75, 60)
-        return CGSize(width: width, height: height)
-    }
-
-    private func uniqueDestinationURL(for sourceURL: URL, in folderURL: URL) -> URL {
+    private func uniqueDestinationURL(for sourceURL: URL, in folderURL: URL) throws -> URL {
         var destination = folderURL.appendingPathComponent(sourceURL.lastPathComponent)
         let pathExtension = destination.pathExtension
         let baseName = destination.deletingPathExtension().lastPathComponent
 
         var copyIndex = 1
         let maxAttempts = 10000
-        while fileManager.fileExists(atPath: destination.path), copyIndex <= maxAttempts {
+        while fileManager.fileExists(atPath: destination.path) {
+            guard copyIndex <= maxAttempts else {
+                throw NSError(domain: "FileStackController", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "고유한 대상 파일명을 생성하지 못했습니다."
+                ])
+            }
             let suffix = copyIndex == 1 ? " copy" : " copy \(copyIndex)"
             let newName: String
             if pathExtension.isEmpty {
@@ -610,10 +517,13 @@ final class FileStackController: ObservableObject {
             destination = folderURL.appendingPathComponent(newName)
             copyIndex += 1
         }
-
         return destination
     }
 
+    /// Returns a sensible default screenshot folder for first-run bootstrap.
+    /// Returns nil if no dedicated screenshot folder exists — we deliberately do NOT
+    /// fall back to ~/Desktop because that would silently watch the user's entire
+    /// desktop, which is rarely what they want.
     private func detectScreenshotFolder() -> URL? {
         if let location = UserDefaults(suiteName: "com.apple.screencapture")?.string(forKey: "location"),
            location.isEmpty == false {
@@ -628,10 +538,6 @@ final class FileStackController: ObservableObject {
             .appendingPathComponent("Screenshots", isDirectory: true)
         if let picturesScreenshots, directoryExists(at: picturesScreenshots) {
             return picturesScreenshots
-        }
-
-        if let desktop = fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first {
-            return desktop
         }
 
         return nil
