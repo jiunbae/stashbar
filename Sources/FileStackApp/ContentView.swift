@@ -329,7 +329,7 @@ private struct FileListRow: View {
 // remain bound only to `FileStackController`'s other published properties.
 
 private struct IconGridContainer: View {
-    let controller: FileStackController
+    @ObservedObject var controller: FileStackController
     @ObservedObject var selection: SelectionState
 
     var body: some View {
