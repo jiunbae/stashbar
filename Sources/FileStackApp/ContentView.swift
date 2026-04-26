@@ -336,7 +336,8 @@ private struct IconGridContainer: View {
         IconCollectionViewRepresentable(
             controller: controller,
             selectedFileIDs: selection.selectedFileIDs,
-            primarySelectedFileID: selection.primarySelectedFileID
+            primarySelectedFileID: selection.primarySelectedFileID,
+            previewScale: controller.previewScale
         )
     }
 }

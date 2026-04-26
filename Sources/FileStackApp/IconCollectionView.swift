@@ -15,12 +15,23 @@ private final class FileCollectionView: NSCollectionView {
         }
         super.keyDown(with: event)
     }
+
+    /// Accept the first click even when the popover window is not yet key. Without this,
+    /// the very first click after the popover opens is consumed for window activation
+    /// instead of being delivered as a selection event, causing a perceived ~1s delay.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
 }
 
 struct IconCollectionViewRepresentable: NSViewRepresentable {
     let controller: FileStackController
     let selectedFileIDs: Set<String>
     let primarySelectedFileID: String?
+    /// Stored as an explicit struct property so SwiftUI invokes updateNSView when the
+    /// slider moves. Reading the value off the controller alone wasn't enough — the
+    /// representable struct looked unchanged and SwiftUI elided the update call.
+    let previewScale: Double
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
