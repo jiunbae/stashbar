@@ -8,6 +8,7 @@ private protocol IconCollectionCommandHandling: AnyObject {
 
 private final class FileCollectionView: NSCollectionView {
     weak var commandHandler: IconCollectionCommandHandling?
+    var doubleClickHandler: ((NSPoint) -> Void)?
 
     override func keyDown(with event: NSEvent) {
         if commandHandler?.handleCommandKey(event) == true {
@@ -21,6 +22,22 @@ private final class FileCollectionView: NSCollectionView {
     /// instead of being delivered as a selection event, causing a perceived ~1s delay.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
+    }
+
+    /// Detect double-clicks via the event's clickCount instead of attaching an
+    /// NSClickGestureRecognizer with numberOfClicksRequired = 2. The recognizer
+    /// approach delays single-click delivery for the system double-click interval
+    /// (~250ms) while it disambiguates, which made selection feedback feel laggy.
+    /// Doing it on mouseDown lets the first click fall through to NSCollectionView's
+    /// default selection handling immediately while still catching the second click
+    /// as a double-click.
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            let point = convert(event.locationInWindow, from: nil)
+            doubleClickHandler?(point)
+            return
+        }
+        super.mouseDown(with: event)
     }
 }
 
@@ -59,13 +76,10 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         collectionView.dataSource = context.coordinator
         collectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: false)
 
-        let doubleClickRecognizer = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleClick(_:)))
-        doubleClickRecognizer.numberOfClicksRequired = 2
-        collectionView.addGestureRecognizer(doubleClickRecognizer)
-
-        context.coordinator.doubleClickRecognizer = doubleClickRecognizer
-
         collectionView.commandHandler = context.coordinator
+        collectionView.doubleClickHandler = { [weak coordinator = context.coordinator] point in
+            coordinator?.handleDoubleClick(at: point)
+        }
         context.coordinator.collectionView = collectionView
 
         scrollView.documentView = collectionView
@@ -98,7 +112,6 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
         private var suppressSelectionUpdates = false
         private var lastUserSelectionIndexPath: IndexPath?
         private var lastKnownScale: Double
-        fileprivate var doubleClickRecognizer: NSClickGestureRecognizer?
         private var currentMetrics = IconCollectionLayoutMetrics(
             itemSize: NSSize(width: 140, height: 180),
             thumbnailSize: NSSize(width: 120, height: 120)
@@ -318,18 +331,14 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
             return menu
         }
 
-        @objc func handleDoubleClick(_ sender: Any?) {
-            guard let gesture = sender as? NSClickGestureRecognizer,
-                  gesture.state == .ended,
-                  let collectionView else { return }
-
-            let point = gesture.location(in: collectionView)
-            guard let indexPath = collectionView.indexPathForItem(at: point),
+        func handleDoubleClick(at point: NSPoint) {
+            guard let collectionView,
+                  let indexPath = collectionView.indexPathForItem(at: point),
                   indexPath.item < files.count else { return }
 
             lastUserSelectionIndexPath = indexPath
             collectionView.selectionIndexPaths = [indexPath]
-            syncControllerSelectionFromCollectionView(focused: indexPath)
+            scheduleSelectionSync()
             NSWorkspace.shared.open(files[indexPath.item].url)
         }
 
