@@ -1,41 +1,170 @@
-## File Stack
+<div align="center">
 
-![File Stack Hero](Resources/hero.png)
+# File Stack
 
-Mac 메뉴 막대에서 빠르게 최근 파일을 모아보는 파일 관리 도구입니다. 감시할 폴더를 지정하면 스크린샷이나 다운로드 파일을 즉시 확인하고, 미리보기 크기 조절·빠른 선택·클립보드 작업 등을 Finder처럼 자연스럽게 사용할 수 있습니다.
+[![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-blue?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/swift-5.9-orange?logo=swift&logoColor=white)](https://swift.org)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![App Store ready](https://img.shields.io/badge/sandbox-ready-success)](#mac-app-store-배포)
 
-### 미리보기
+**메뉴바에서 자주 보는 폴더의 최근 파일을 한눈에 — Finder처럼 자연스럽게**
+
+![File Stack hero](Resources/hero.png)
+
+</div>
+
+---
+
+## ✨ 한눈에
+
+```
+🖱  메뉴바 클릭 → 최근 파일 즉시 확인
+📁  여러 폴더 동시 감시 (스크린샷, 다운로드, 작업 폴더…)
+⚡  디스크 캐시로 앱 재실행해도 미리보기 즉시 표시
+⌨️  Finder 단축키 그대로 (⌘C/⌘X/⌘V, ⌘⌫, Space)
+```
 
 ![File Stack 미리보기](Resources/preview.png)
 
-### 주요 기능
+## 주요 기능
 
-- 여러 감시 폴더를 등록하고 폴더별로 최신 파일을 표시
-- 이름·종류·수정 날짜·크기 기준 오름/내림차순 정렬
-- 아이콘/목록/계층 보기 모드 전환 및 슬라이더로 미리보기 크기 조절
-- Finder 스타일의 다중 선택, `⌘C/⌘X/⌘V`, `⌘⌫`(휴지통), Space(Quick Look) 단축키 지원
-- 선택한 항목을 더블 클릭하거나 컨텍스트 메뉴로 바로 열기/찾아보기
-- 로그인 시 자동 실행, 기본 보기 모드, 감시 폴더 관리를 설정 화면에서 구성
-- 디스크 썸네일 캐시로 앱 재실행 시에도 미리보기를 즉시 표시
+- 📁 **다중 감시 폴더** — 폴더별로 최근 파일을 정렬해서 표시, 드롭다운으로 즉시 전환
+- 🔄 **실시간 동기화** — FSEvents 기반, 파일 추가·수정·삭제 자동 반영
+- 🎨 **3가지 보기 모드** — 아이콘/목록/계층, 슬라이더로 미리보기 크기 조절
+- 🔠 **다중 정렬** — 이름·종류·수정 날짜·크기 × 오름/내림차순
+- ⚡ **2계층 캐시** — 메모리 + 디스크 썸네일 캐시로 부드러운 스크롤과 빠른 재시작
+- 👁  **Quick Look** — `Space`로 즉시 미리보기, 선택 변경 자동 갱신
+- 📋 **Finder 단축키** — `⌘C/⌘X/⌘V` 복사·잘라내기·붙여넣기, `⌘⌫` 휴지통
+- 🔁 **드래그 앤 드롭** — 다른 앱이나 Finder로 바로 드래그
+- 🌗 **로그인 시 자동 실행** — 설정에서 토글, 모던 `SMAppService` 기반
+- 🔒 **App Sandbox 호환** — security-scoped bookmark로 영속화, Mac App Store 배포 준비 완료
 
-### 시스템 요구사항
+## 시스템 요구사항
 
-- macOS 13.0 이상
+- macOS 13.0 (Ventura) 이상
+- Apple Silicon · Intel Mac 모두 지원
 
-### 빌드 및 실행
+## 설치
 
-개발 중 실행:
+### 직접 빌드해서 사용하기
 
 ```bash
-swift build
+git clone https://github.com/jiunbae/file-stack.git
+cd file-stack
+
+# 개발 중 실행
 swift run
+
+# 또는 .app 번들 빌드 후 실행
+scripts/build_app.sh
+open "dist/File Stack.app"
 ```
 
-배포용 `.app` 번들 생성:
+### Mac App Store
+
+> 출시 준비 중입니다. 출시되면 이 섹션에 링크가 추가됩니다.
+
+## 사용법
+
+| 동작 | 방법 |
+|------|------|
+| 폴더 추가 | popover 좌측 하단 **+** 버튼 → 폴더 선택 |
+| 파일 선택 | 클릭 (다중 선택은 `⌘`/`Shift`) |
+| 파일 열기 | 더블클릭 또는 우클릭 → "파일 열기" |
+| Finder에서 보기 | 우클릭 → "Finder에서 보기" |
+| Quick Look | 파일 선택 후 `Space` |
+| 휴지통 이동 | `⌘⌫` |
+| 정렬 변경 | 헤더의 정렬 메뉴 |
+| 보기 모드 | 헤더 우측 segmented control |
+| 미리보기 크기 | 하단 슬라이더 |
+| 설정 | 메뉴바 우클릭 → "설정..." 또는 `⌘,` |
+
+## Mac App Store 배포
+
+이 프로젝트는 App Store 제출이 가능한 상태로 설정되어 있습니다.
+
+### 사전 준비
+
+1. **Apple Developer Program 가입**
+2. **App ID 등록** — `developer.apple.com` → Identifiers → `com.jiunbae.FileStack`(Explicit)
+3. **인증서 발급**
+   - `Apple Distribution` (코드 서명용)
+   - `3rd Party Mac Developer Installer` (.pkg 서명용)
+4. **App Store Connect 앱 등록** — Bundle ID `com.jiunbae.FileStack` 선택
+
+### 빌드 및 업로드
 
 ```bash
-scripts/build_app.sh
-# 결과물: dist/File Stack.app
+# 1. .app + .pkg 패키징 (서명까지)
+SIGN_IDENTITY="Apple Distribution: Jiun Bae (TEAMID)" \
+INSTALLER_IDENTITY="3rd Party Mac Developer Installer: Jiun Bae (TEAMID)" \
+  scripts/package_for_app_store.sh
+
+# 2. App Store Connect에 검증
+ACTION=validate \
+APPLE_API_KEY=ABCDEFG123 APPLE_API_ISSUER=<UUID> \
+SIGN_IDENTITY="..." INSTALLER_IDENTITY="..." \
+  scripts/package_for_app_store.sh
+
+# 3. 업로드
+ACTION=upload \
+APPLE_API_KEY=ABCDEFG123 APPLE_API_ISSUER=<UUID> \
+SIGN_IDENTITY="..." INSTALLER_IDENTITY="..." \
+  scripts/package_for_app_store.sh
 ```
 
-또는 Xcode에서 프로젝트를 열어 `FileStackApp` 타깃을 실행하면 됩니다.
+App Store Connect API key는 [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/api)에서 발급받습니다. 발급된 `.p8` 파일은 `~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8` 경로에 저장하세요.
+
+## 기술 스택
+
+| 영역 | 사용 기술 |
+|------|----------|
+| UI | SwiftUI · AppKit (`NSCollectionView`, `NSPopover`) |
+| 파일 시스템 감시 | FSEvents (`kFSEventStreamCreateFlagFileEvents`) |
+| 썸네일 | `QuickLookThumbnailing` + 메모리/디스크 2계층 캐시 |
+| 미리보기 | `QLPreviewPanel` |
+| 로그인 아이템 | ServiceManagement (`SMAppService`) |
+| 영속성 | `UserDefaults` + Security-Scoped Bookmarks |
+| 빌드 | Swift Package Manager 5.9 |
+
+### 프로젝트 구조
+
+```
+Sources/FileStackApp/
+├── main.swift                      AppDelegate + 메뉴바 status item
+├── FileStackController.swift       메인 상태, 폴더 감시 lifecycle, 클립보드
+├── SelectionState.swift            선택 상태 (별도 ObservableObject로 분리)
+├── ContentView.swift               SwiftUI 루트 + 컨테이너 뷰들
+├── IconCollectionView.swift        NSCollectionView 기반 아이콘 그리드
+├── KeyEventHandlingView.swift      Space 키 → QuickLook 패널
+├── DirectoryWatcher.swift          FSEvents 래퍼
+├── ThumbnailCache.swift            메모리 캐시 + in-flight dedup
+├── DiskThumbnailCache.swift        디스크 영속 캐시 + 자동 무효화
+├── FileIconCache.swift             NSWorkspace 아이콘 캐시
+├── FileTreeBuilder.swift           계층 보기용 재귀 트리 빌더
+├── Models.swift                    FileItem, WatchedFolder, SortOption 등
+├── SettingsView.swift              설정 화면 (로그인 시 실행, 폴더 관리)
+└── SettingsWindowController.swift  설정 윈도우
+```
+
+### 빌드 명령
+
+```bash
+swift build                              # 디버그 빌드
+swift build -c release                   # 릴리즈 빌드
+swift run                                # 직접 실행
+scripts/build_app.sh                     # .app 번들 (ad-hoc 서명)
+scripts/package_for_app_store.sh         # 서명 .pkg + 검증/업로드
+```
+
+## 라이선스
+
+MIT — 자세한 내용은 [LICENSE](LICENSE) 참조.
+
+---
+
+<div align="center">
+
+**Made with ☕ by [@jiunbae](https://github.com/jiunbae)**
+
+</div>
