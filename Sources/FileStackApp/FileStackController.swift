@@ -57,7 +57,12 @@ final class FileStackController: ObservableObject {
 
     private var watchers: [UUID: DirectoryWatcher] = [:]
     private let defaults = UserDefaults.standard
-    private let pathsKey = "WatchedFolderPaths"
+    private let pathsKey = "WatchedFolderPaths"               // legacy, kept for migration
+    private let bookmarksKey = "WatchedFolderBookmarks_v1"     // security-scoped bookmark data
+    /// URLs whose security-scoped resource we explicitly started (resolved-from-bookmark
+    /// URLs require a balanced stop on removal; URLs from NSOpenPanel have implicit
+    /// access for the current session and are not tracked here).
+    private var securityScopedURLs: [UUID: URL] = [:]
     private let maxItemsPerFolder = 40
     private let workerQueue = DispatchQueue(label: "com.file-stack.controller.files", qos: .userInitiated)
     private let log = Logger(subsystem: "com.file-stack.app", category: "controller")
@@ -100,6 +105,9 @@ final class FileStackController: ObservableObject {
         for watcher in watchers.values {
             watcher.cancel()
         }
+        for url in securityScopedURLs.values {
+            url.stopAccessingSecurityScopedResource()
+        }
     }
 
     func addFolder(url: URL) {
@@ -126,6 +134,9 @@ final class FileStackController: ObservableObject {
     func removeFolder(_ folder: WatchedFolder) {
         watchers[folder.id]?.cancel()
         watchers.removeValue(forKey: folder.id)
+        if let url = securityScopedURLs.removeValue(forKey: folder.id) {
+            url.stopAccessingSecurityScopedResource()
+        }
         folders.removeAll { $0.id == folder.id }
         saveFolders()
         ensureSelectedFolderIsValid()
@@ -321,33 +332,74 @@ final class FileStackController: ObservableObject {
     }
 
     private func loadPersistedFolders() {
-        let storedPaths = defaults.array(forKey: pathsKey) as? [String] ?? []
-        var validURLs: [URL] = storedPaths
-            .compactMap { URL(fileURLWithPath: $0).standardizedFileURL }
-            .filter { directoryExists(at: $0) }
+        migrateLegacyPathsIfNeeded()
 
-        if validURLs.isEmpty, let suggested = detectScreenshotFolder() {
-            validURLs = [suggested]
+        let storedBookmarks = (defaults.array(forKey: bookmarksKey) as? [Data]) ?? []
+
+        for data in storedBookmarks {
+            var stale = false
+            guard let url = try? URL(
+                resolvingBookmarkData: data,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &stale
+            ) else { continue }
+            guard url.startAccessingSecurityScopedResource() else { continue }
+
+            let beforeCount = folders.count
+            addFolder(url: url, persist: false, suppressAlert: true)
+            if folders.count > beforeCount, let addedID = folders.last?.id {
+                securityScopedURLs[addedID] = url
+            } else {
+                url.stopAccessingSecurityScopedResource()
+            }
         }
 
-        for url in validURLs {
-            addFolder(url: url, persist: false)
+        if folders.isEmpty, let suggested = detectScreenshotFolder() {
+            addFolder(url: suggested, persist: false, suppressAlert: true)
         }
 
         saveFolders()
         ensureSelectedFolderIsValid()
     }
 
-    private func addFolder(url: URL, persist: Bool) {
+    /// One-shot upgrade from the pre-sandbox path-only persistence format. In a sandbox
+    /// build the legacy paths usually become inaccessible (no bookmark data), so the
+    /// resulting bookmark list may be empty — that's expected; the user will re-add
+    /// folders through NSOpenPanel and we then have proper security scopes.
+    private func migrateLegacyPathsIfNeeded() {
+        guard defaults.object(forKey: bookmarksKey) == nil else { return }
+        let legacyPaths = defaults.array(forKey: pathsKey) as? [String] ?? []
+        guard legacyPaths.isEmpty == false else { return }
+
+        let bookmarks: [Data] = legacyPaths.compactMap { path in
+            let url = URL(fileURLWithPath: path).standardizedFileURL
+            guard directoryExists(at: url) else { return nil }
+            return try? url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        }
+
+        defaults.set(bookmarks, forKey: bookmarksKey)
+        defaults.removeObject(forKey: pathsKey)
+    }
+
+    private func addFolder(url: URL, persist: Bool, suppressAlert: Bool = false) {
         let standardized = url.standardizedFileURL
 
         guard directoryExists(at: standardized) else {
-            alertMessage = "선택한 경로에 접근할 수 없습니다."
+            if !suppressAlert {
+                alertMessage = "선택한 경로에 접근할 수 없습니다."
+            }
             return
         }
 
         guard folders.contains(where: { $0.url == standardized }) == false else {
-            alertMessage = "이미 추가된 폴더입니다."
+            if !suppressAlert {
+                alertMessage = "이미 추가된 폴더입니다."
+            }
             return
         }
 
@@ -455,8 +507,14 @@ final class FileStackController: ObservableObject {
     }
 
     private func saveFolders() {
-        let paths = folders.map { $0.url.path }
-        defaults.set(paths, forKey: pathsKey)
+        let bookmarks: [Data] = folders.compactMap { folder in
+            try? folder.url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        }
+        defaults.set(bookmarks, forKey: bookmarksKey)
     }
 
     private func refreshCurrentFilesCache() {

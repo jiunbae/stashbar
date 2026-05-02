@@ -10,12 +10,17 @@ APP_DISPLAY_NAME=${APP_DISPLAY_NAME:-"File Stack"}
 PRODUCT_NAME=${PRODUCT_NAME:-$APP_PRODUCT}
 BUILD_CONFIGURATION=${BUILD_CONFIGURATION:-release}
 OUTPUT_DIR=${OUTPUT_DIR:-"${PROJECT_ROOT}/dist"}
-BUNDLE_IDENTIFIER=${BUNDLE_IDENTIFIER:-"app.filestack"}
+BUNDLE_IDENTIFIER=${BUNDLE_IDENTIFIER:-"com.jiunbae.FileStack"}
 APP_VERSION=${APP_VERSION:-"1.0.0"}
 APP_BUILD=${APP_BUILD:-"$(date +%Y%m%d%H%M)"}
 APP_ICON_FILE=${APP_ICON_FILE:-"FileStack.icns"}
 APP_ICON_NAME=${APP_ICON_NAME:-"FileStack"}
+APP_CATEGORY=${APP_CATEGORY:-"public.app-category.utilities"}
+APP_COPYRIGHT=${APP_COPYRIGHT:-"Copyright © $(date +%Y) Jiun Bae. All rights reserved."}
 RESOURCE_DIR=${RESOURCE_DIR:-"${PROJECT_ROOT}/Resources"}
+ENTITLEMENTS_FILE=${ENTITLEMENTS_FILE:-"${SCRIPT_DIR}/FileStack.entitlements"}
+# `-` is ad-hoc; for App Store builds set SIGN_IDENTITY to "Apple Distribution: ..."
+SIGN_IDENTITY=${SIGN_IDENTITY:--}
 
 APP_BUNDLE_NAME="${APP_DISPLAY_NAME}.app"
 APP_BUNDLE_PATH="${OUTPUT_DIR}/${APP_BUNDLE_NAME}"
@@ -57,10 +62,18 @@ cat >"${APP_BUNDLE_PATH}/Contents/Info.plist" <<EOF
     <string>${APP_ICON_NAME}</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>${APP_CATEGORY}</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>${APP_COPYRIGHT}</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
 </plist>
 EOF
@@ -108,8 +121,22 @@ if [[ ! -f "${ICON_DEST}" ]]; then
 fi
 
 if command -v codesign >/dev/null 2>&1; then
-  echo "Ad-hoc signing ${APP_BUNDLE_PATH}"
-  codesign --force --deep --sign - --timestamp=none "${APP_BUNDLE_PATH}" >/dev/null
+  CODESIGN_ARGS=(--force --options runtime)
+  if [[ -f "${ENTITLEMENTS_FILE}" ]]; then
+    CODESIGN_ARGS+=(--entitlements "${ENTITLEMENTS_FILE}")
+  fi
+  if [[ "${SIGN_IDENTITY}" == "-" ]]; then
+    echo "Ad-hoc signing ${APP_BUNDLE_PATH} (with hardened runtime)"
+    CODESIGN_ARGS+=(--sign - --timestamp=none --deep)
+  else
+    echo "Signing ${APP_BUNDLE_PATH} with: ${SIGN_IDENTITY}"
+    CODESIGN_ARGS+=(--sign "${SIGN_IDENTITY}")
+  fi
+  codesign "${CODESIGN_ARGS[@]}" "${APP_BUNDLE_PATH}" >/dev/null
 fi
 
 echo "✅ App bundle created at ${APP_BUNDLE_PATH}"
+if [[ "${SIGN_IDENTITY}" == "-" ]]; then
+  echo "ℹ️  For App Store distribution, rebuild with:"
+  echo "   SIGN_IDENTITY=\"Apple Distribution: <Your Team>\" $0"
+fi
