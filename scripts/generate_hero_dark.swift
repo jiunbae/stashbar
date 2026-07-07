@@ -184,7 +184,7 @@ func makeDarkIcon(size: CGFloat) -> NSImage {
             NSColor(calibratedRed: 0.35, green: 0.65, blue: 1.0, alpha: 1.0).setFill()
             badgePath.fill()
 
-            let text = "FS" as NSString
+            let text = "S" as NSString
             let badgeFont = NSFont.systemFont(ofSize: badgeHeight * 0.7, weight: .heavy)
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
