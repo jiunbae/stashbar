@@ -50,6 +50,13 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
     /// slider moves. Reading the value off the controller alone wasn't enough — the
     /// representable struct looked unchanged and SwiftUI elided the update call.
     let previewScale: Double
+    /// Same reason as `previewScale`: when a watched file is added/removed the controller
+    /// mutates its file list but none of this representable's other stored properties change,
+    /// so SwiftUI would elide updateNSView and the grid wouldn't reflect the new file until a
+    /// view-mode switch forced makeNSView. Threading the controller's monotonic generation
+    /// counter through here makes the struct compare unequal, so updateNSView runs and picks
+    /// up the new `controller.currentFiles`.
+    let fileListGeneration: Int
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)

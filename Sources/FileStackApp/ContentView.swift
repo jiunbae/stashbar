@@ -394,7 +394,8 @@ private struct IconGridContainer: View {
             controller: controller,
             selectedFileIDs: selection.selectedFileIDs,
             primarySelectedFileID: selection.primarySelectedFileID,
-            previewScale: controller.previewScale
+            previewScale: controller.previewScale,
+            fileListGeneration: controller.fileListGeneration
         )
     }
 }
