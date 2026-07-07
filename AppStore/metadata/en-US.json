@@ -7,7 +7,7 @@
   "keywords": "menubar,recent files,file browser,folder watcher,Quick Look,productivity,utilities,Finder,screenshots,downloads",
   "supportUrl": "https://github.com/jiunbae/file-stack",
   "marketingUrl": "https://github.com/jiunbae/file-stack",
-  "privacyPolicyUrl": "https://jiunbae.github.io/file-stack/privacy.html",
+  "privacyPolicyUrl": "https://jiun.dev/file-stack/privacy.html",
   "primaryCategory": "Utilities",
   "reviewNotes": "This is a macOS menu bar app. It only monitors folders selected by the user via NSOpenPanel, and uses App Sandbox with security-scoped bookmarks."
 }

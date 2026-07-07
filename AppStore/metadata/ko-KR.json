@@ -7,7 +7,7 @@
   "keywords": "메뉴바,최근 파일,파일 탐색,폴더 감시,Quick Look,생산성,유틸리티,Finder,스크린샷,다운로드",
   "supportUrl": "https://github.com/jiunbae/file-stack",
   "marketingUrl": "https://github.com/jiunbae/file-stack",
-  "privacyPolicyUrl": "https://jiunbae.github.io/file-stack/privacy.html",
+  "privacyPolicyUrl": "https://jiun.dev/file-stack/privacy.html",
   "primaryCategory": "Utilities",
   "reviewNotes": "macOS 메뉴바 앱입니다. 사용자가 NSOpenPanel로 선택한 폴더만 감시하며, App Sandbox와 security-scoped bookmark를 사용합니다."
 }
