@@ -5,9 +5,11 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-blue?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/swift-5.9-orange?logo=swift&logoColor=white)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![App Store ready](https://img.shields.io/badge/sandbox-ready-success)](#mac-app-store-배포)
+[![Website](https://img.shields.io/badge/website-jiunbae.github.io%2Ffile--stack-0a84ff)](https://jiunbae.github.io/file-stack/)
 
 **메뉴바에서 자주 보는 폴더의 최근 파일을 한눈에 — Finder처럼 자연스럽게**
+
+[**🌐 웹사이트**](https://jiunbae.github.io/file-stack/) · [**🔒 개인정보 처리방침**](https://jiunbae.github.io/file-stack/privacy.html) · [**🐛 이슈 보고**](https://github.com/jiunbae/file-stack/issues)
 
 ![File Stack hero](Resources/hero.png)
 
@@ -62,7 +64,7 @@ open "dist/File Stack.app"
 
 ### Mac App Store
 
-> 출시 준비 중입니다. 출시되면 이 섹션에 링크가 추가됩니다.
+> Mac App Store 심사 진행 중입니다. 출시되면 이 섹션에 다운로드 링크가 추가됩니다. 진행 상황은 [웹사이트](https://jiunbae.github.io/file-stack/)에서 확인할 수 있습니다.
 
 ## 사용법
 
@@ -130,21 +132,29 @@ App Store Connect API key는 [App Store Connect → Users and Access → Integra
 ### 프로젝트 구조
 
 ```
-Sources/FileStackApp/
-├── main.swift                      AppDelegate + 메뉴바 status item
-├── FileStackController.swift       메인 상태, 폴더 감시 lifecycle, 클립보드
-├── SelectionState.swift            선택 상태 (별도 ObservableObject로 분리)
-├── ContentView.swift               SwiftUI 루트 + 컨테이너 뷰들
-├── IconCollectionView.swift        NSCollectionView 기반 아이콘 그리드
-├── KeyEventHandlingView.swift      Space 키 → QuickLook 패널
-├── DirectoryWatcher.swift          FSEvents 래퍼
-├── ThumbnailCache.swift            메모리 캐시 + in-flight dedup
-├── DiskThumbnailCache.swift        디스크 영속 캐시 + 자동 무효화
-├── FileIconCache.swift             NSWorkspace 아이콘 캐시
-├── FileTreeBuilder.swift           계층 보기용 재귀 트리 빌더
-├── Models.swift                    FileItem, WatchedFolder, SortOption 등
-├── SettingsView.swift              설정 화면 (로그인 시 실행, 폴더 관리)
-└── SettingsWindowController.swift  설정 윈도우
+Sources/
+├── FileStackCore/                  순수 모델 + 로직 (테스트 대상)
+│   ├── Models.swift                FileItem, WatchedFolder, SortOption 등
+│   ├── SelectionState.swift        선택 상태 ObservableObject
+│   ├── FileTreeBuilder.swift       계층 보기용 재귀 트리 빌더
+│   └── Localization.swift          한/영 문자열
+└── FileStackApp/                   AppKit + SwiftUI UI 레이어
+    ├── main.swift                  AppDelegate + 메뉴바 status item
+    ├── FileStackController.swift   메인 상태, 폴더 감시 lifecycle, 클립보드
+    ├── ContentView.swift           SwiftUI 루트 + 컨테이너 뷰들
+    ├── IconCollectionView.swift    NSCollectionView 기반 아이콘 그리드
+    ├── KeyEventHandlingView.swift  Space 키 → QuickLook 패널
+    ├── DirectoryWatcher.swift      FSEvents 래퍼
+    ├── ThumbnailCache.swift        메모리 캐시 + in-flight dedup
+    ├── DiskThumbnailCache.swift    디스크 영속 캐시 + 자동 무효화
+    ├── FileIconCache.swift         NSWorkspace 아이콘 캐시
+    ├── ScreenshotSupport.swift     App Store 스크린샷 자동화 훅
+    ├── SettingsView.swift          설정 화면 (로그인 시 실행, 폴더 관리)
+    └── SettingsWindowController.swift  설정 윈도우
+
+Tests/FileStackAppTests/            FileStackCore 단위 테스트
+docs/                               GitHub Pages (랜딩 + 개인정보 처리방침)
+AppStore/                           App Store 제출용 메타데이터/스크린샷
 ```
 
 ### 빌드 명령
@@ -153,9 +163,15 @@ Sources/FileStackApp/
 swift build                              # 디버그 빌드
 swift build -c release                   # 릴리즈 빌드
 swift run                                # 직접 실행
+swift test                               # FileStackCore 단위 테스트
 scripts/build_app.sh                     # .app 번들 (ad-hoc 서명)
 scripts/package_for_app_store.sh         # 서명 .pkg + 검증/업로드
+scripts/upload_to_app_store.sh           # 키체인 해제 + 빌드 + 업로드 (편의)
 ```
+
+## 개인정보 및 권한
+
+File Stack은 데이터를 수집하지 않으며 네트워크에 접속하지 않습니다. 사용자가 직접 선택한 폴더만 sandbox 내에서 security-scoped bookmark로 접근합니다. 자세한 내용은 [개인정보 처리방침](https://jiunbae.github.io/file-stack/privacy.html) 또는 [PRIVACY.md](PRIVACY.md)를 참조하세요.
 
 ## 라이선스
 

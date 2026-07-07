@@ -68,7 +68,7 @@ fi
 # --- Build the signed .app ----------------------------------------------------
 
 echo "==> Building .app with App Store signing"
-SIGN_IDENTITY="${SIGN_IDENTITY}" "${SCRIPT_DIR}/build_app.sh"
+SIGN_IDENTITY="${SIGN_IDENTITY}" PROVISIONING_PROFILE="${PROVISIONING_PROFILE:-}" "${SCRIPT_DIR}/build_app.sh"
 
 if [[ ! -d "${APP_BUNDLE_PATH}" ]]; then
     echo "error: expected app bundle not found at ${APP_BUNDLE_PATH}" >&2

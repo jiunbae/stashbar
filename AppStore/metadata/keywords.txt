@@ -1,0 +1,1 @@
+menu bar,file browser,recent files,folder watcher,quick look,productivity,utilities,finder

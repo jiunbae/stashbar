@@ -1,0 +1,13 @@
+{
+  "locale": "en-US",
+  "name": "File Stack",
+  "subtitle": "Quickly check recent files from the menu bar",
+  "promotionalText": "Pin frequently used folders to your menu bar and instantly browse the latest files.",
+  "description": "File Stack is a macOS utility that lets you quickly open folders you check often from the menu bar and view the latest files.\n\nIt monitors locations you repeatedly open, like screenshots, downloads, and work folders, and presents recent items in one organized place. No need to keep Finder open all the time—you can find and open files you need right away.\n\nKey Features\n- Monitor multiple folders simultaneously and switch between them quickly\n- Icon, list, and hierarchical views with sorting options\n- Quick Look previews and Finder-style keyboard shortcuts\n- Drag and drop, copy/paste, and move to Trash support\n- Disk cache and security bookmarks for fast access after relaunch\n- Launch at login so it is always ready in the menu bar\n\nDesigned to make the repetitive flow of opening and checking files shorter and more natural.",
+  "keywords": "menubar,recent files,file browser,folder watcher,Quick Look,productivity,utilities,Finder,screenshots,downloads",
+  "supportUrl": "https://github.com/jiunbae/file-stack",
+  "marketingUrl": "https://github.com/jiunbae/file-stack",
+  "privacyPolicyUrl": "https://jiunbae.github.io/file-stack/privacy.html",
+  "primaryCategory": "Utilities",
+  "reviewNotes": "This is a macOS menu bar app. It only monitors folders selected by the user via NSOpenPanel, and uses App Sandbox with security-scoped bookmarks."
+}

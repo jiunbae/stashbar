@@ -1,0 +1,20 @@
+File Stack is a menu bar utility (LSUIElement) that lets users watch folders and browse recent files from the macOS menu bar.
+
+SANDBOX & FOLDER ACCESS:
+- The app uses NSOpenPanel to let users explicitly select folders they want to watch. No folders are accessed without explicit user action.
+- Folder access permissions are persisted using security-scoped bookmarks (NSData with .withSecurityScope) so the app can continue monitoring across launches within the App Sandbox.
+- The app does not access any system folders, home directory contents, or user files outside of the folders explicitly chosen by the user.
+
+NETWORK & DATA:
+- The app does not make any network requests. All functionality is local.
+- No user data, analytics, crash reports, or diagnostics are collected or transmitted.
+- Thumbnail caching is performed entirely on-device using QuickLookThumbnailing and a local disk cache.
+
+LAUNCH AT LOGIN:
+- The "Launch at Login" feature uses Apple's modern SMAppService API (ServiceManagement framework), which is the recommended approach for sandboxed Mac apps.
+
+QUICK LOOK & FILE OPERATIONS:
+- Quick Look previews use the standard QLPreviewPanel system API.
+- Copy, cut, paste, and trash operations use standard NSPasteboard and NSWorkspace APIs.
+
+The app is localized in Korean (default) and English.

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Privacy Policy — File Stack</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="File Stack privacy policy — no data collection, no network, all local.">
+<link rel="icon" href="assets/icon.png">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fafafa;
+    --fg: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #0a84ff;
+    --card: #ffffff;
+    --border: #e5e5e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e0e10;
+      --fg: #e8e8ea;
+      --muted: #9a9a9f;
+      --accent: #4ea1ff;
+      --card: #18181b;
+      --border: #262629;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  header .effective {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  header .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  header .brand img {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+  .intro {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    color: var(--muted);
+  }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 36px 0 12px;
+    letter-spacing: -0.01em;
+  }
+  h2:first-of-type { margin-top: 0; }
+  p { margin: 0 0 14px; }
+  ul {
+    padding-left: 22px;
+    margin: 0 0 14px;
+  }
+  li { margin-bottom: 6px; }
+  strong { color: var(--fg); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="./">
+      <img src="assets/icon.png" alt="File Stack">
+      <span>File Stack</span>
+    </a>
+    <h1>Privacy Policy</h1>
+    <div class="effective">Effective Date: May 5, 2026</div>
+  </header>
+
+  <div class="intro">
+    File Stack is a menu bar utility for macOS designed with privacy as a core principle. This policy explains what data is handled and how it is protected.
+  </div>
+
+  <h2>1. Data We Collect</h2>
+  <p>File Stack does <strong>not</strong> collect personal data, analytics, or usage statistics.</p>
+  <p>The app accesses <strong>only</strong> the folders you explicitly select within the app. The paths of these selected folders are stored locally on your Mac as security-scoped bookmarks to maintain sandbox access across app launches. No file contents are ever read, transmitted, or stored outside of your device.</p>
+
+  <h2>2. How Data Is Used</h2>
+  <p>All stored folder paths are used <strong>solely</strong> to provide the app's core functionality: displaying and managing your selected folders from the menu bar.</p>
+  <ul>
+    <li><strong>Thumbnail Cache:</strong> The app may cache generated thumbnails locally in <code>~/Library/Caches/</code> to improve performance. This cache is stored on your device and is never transmitted.</li>
+    <li><strong>Launch at Login:</strong> If enabled, macOS manages this preference via <code>SMAppService</code>. No account or personal data is involved.</li>
+  </ul>
+
+  <h2>3. Data Sharing</h2>
+  <p>File Stack <strong>does not</strong> share any data with third parties. The app has no network connectivity and does not transmit any information off your device.</p>
+
+  <h2>4. Your Rights and Control</h2>
+  <p>You have full control over all folder access:</p>
+  <ul>
+    <li>You choose which folders to add to File Stack.</li>
+    <li>You may remove folders from File Stack at any time, which immediately revokes the app's access to those folders.</li>
+    <li>You can uninstall File Stack at any time via standard macOS methods, which removes all locally stored data including bookmarks and caches.</li>
+  </ul>
+
+  <h2>5. Security</h2>
+  <p>File Stack operates within the macOS app sandbox. Folder access is granted and persisted using Apple's security-scoped bookmark technology, ensuring access is limited to only the folders you explicitly authorize.</p>
+
+  <h2>6. Contact Information</h2>
+  <p>If you have any questions or concerns about this privacy policy or File Stack's data practices, please contact us at:</p>
+  <p><strong><a href="mailto:privacy@jiunbae.dev">privacy@jiunbae.dev</a></strong></p>
+  <p>We are committed to transparency and will respond to inquiries as promptly as possible.</p>
+
+  <footer>
+    This privacy policy may be updated occasionally. Any changes will be posted here with an updated effective date.<br>
+    <a href="./">← Back to File Stack</a> · <a href="https://github.com/jiunbae/file-stack">GitHub</a>
+  </footer>
+</main>
+</body>
+</html>
