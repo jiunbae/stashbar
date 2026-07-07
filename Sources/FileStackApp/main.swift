@@ -1,22 +1,24 @@
 import AppKit
+import FileStackCore
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
     private var eventMonitor: Any?
+    private var keyboardMonitor: Any?
     private let controller = FileStackController()
     private lazy var settingsWindowController = SettingsWindowController(controller: controller)
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
 
-        let settingsItem = NSMenuItem(title: "설정...", action: #selector(openSettings(_:)), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: NSLocalizedString("menu.settings", comment: "Settings menu item"), action: #selector(openSettings(_:)), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "종료", action: #selector(terminateApp(_:)), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: NSLocalizedString("menu.quit", comment: "Quit menu item"), action: #selector(terminateApp(_:)), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -43,6 +45,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = keyboardMonitor {
             NSEvent.removeMonitor(monitor)
         }
     }
@@ -79,11 +84,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         positionPopover(relativeTo: button)
         NSApp.activate(ignoringOtherApps: true)
+
+        keyboardMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self, event.keyCode == 53 else { return event }
+            self.closePopover(sender: nil)
+            return nil
+        }
     }
 
     private func closePopover(sender: Any?) {
         controller.setInterfaceActive(false)
         popover.performClose(sender)
+        if let monitor = keyboardMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyboardMonitor = nil
+        }
     }
 
     private func showStatusItemMenu(with event: NSEvent) {
@@ -131,8 +146,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+// Wire up the localization bundle so FileStackCore strings resolve correctly.
+// Bundle.module triggers an assertion if the resource bundle cannot be found,
+// so we locate it manually and fall back to the main bundle.
+let possibleBundlePaths = [
+    Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/FileStackApp_FileStackApp.bundle"),
+    Bundle.main.bundleURL.appendingPathComponent("Resources/FileStackApp_FileStackApp.bundle"),
+    Bundle.main.resourceURL?.appendingPathComponent("FileStackApp_FileStackApp.bundle"),
+].compactMap { $0 }
+
+if let bundleURL = possibleBundlePaths.first(where: { FileManager.default.fileExists(atPath: $0.path) }),
+   let resourceBundle = Bundle(url: bundleURL) {
+    Localization.bundle = resourceBundle
+} else {
+    Localization.bundle = Bundle.main
+}
+
 let app = NSApplication.shared
-let delegate = AppDelegate()
-app.delegate = delegate
-app.setActivationPolicy(.accessory)
+let retainedDelegate: NSObject
+
+if let screenshotConfiguration = ScreenshotCaptureConfiguration.fromEnvironment() {
+    let delegate = ScreenshotAppDelegate(configuration: screenshotConfiguration)
+    retainedDelegate = delegate
+    app.delegate = delegate
+    app.setActivationPolicy(.regular)
+} else {
+    let delegate = AppDelegate()
+    retainedDelegate = delegate
+    app.delegate = delegate
+    app.setActivationPolicy(.accessory)
+}
+
 app.run()

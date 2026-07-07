@@ -9,6 +9,7 @@ final class DirectoryWatcher {
 
     private var stream: FSEventStreamRef?
     private let eventHandler: () -> Void
+    private let fsQueue = DispatchQueue(label: "com.filestack.directorywatcher")
 
     private class WeakBox {
         weak var watcher: DirectoryWatcher?
@@ -31,7 +32,9 @@ final class DirectoryWatcher {
         let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
             guard let info = info else { return }
             let box = Unmanaged<WeakBox>.fromOpaque(info).takeUnretainedValue()
-            box.watcher?.eventHandler()
+            DispatchQueue.main.async {
+                box.watcher?.eventHandler()
+            }
         }
 
         let paths = [url.path] as CFArray
@@ -52,7 +55,7 @@ final class DirectoryWatcher {
         }
 
         self.stream = stream
-        FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
+        FSEventStreamSetDispatchQueue(stream, fsQueue)
         if !FSEventStreamStart(stream) {
             cancel()
             throw WatcherError.failedToStartStream

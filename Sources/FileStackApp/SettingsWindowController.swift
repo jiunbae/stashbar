@@ -15,7 +15,7 @@ final class SettingsWindowController: NSWindowController {
             defer: false
         )
         window.contentViewController = hostingController
-        window.title = "File Stack 설정"
+        window.title = NSLocalizedString("window.settings", comment: "Settings window title")
         window.isReleasedWhenClosed = false
 
         super.init(window: window)

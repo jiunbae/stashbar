@@ -1,4 +1,5 @@
 import AppKit
+import FileStackCore
 import QuartzCore
 import SwiftUI
 
@@ -241,7 +242,67 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
                 }
             }
 
+            // Arrow key navigation (no modifiers)
+            if modifiers.subtracting(.numericPad).isEmpty {
+                switch event.keyCode {
+                case 123: // Left
+                    moveSelection(by: -1)
+                    return true
+                case 124: // Right
+                    moveSelection(by: 1)
+                    return true
+                case 126: // Up
+                    moveSelection(byRow: -1)
+                    return true
+                case 125: // Down
+                    moveSelection(byRow: 1)
+                    return true
+                default:
+                    break
+                }
+            }
+
             return false
+        }
+
+        private func moveSelection(by offset: Int) {
+            guard let collectionView, files.count > 0 else { return }
+            let currentIndex: Int = {
+                if let path = lastUserSelectionIndexPath {
+                    return path.item
+                }
+                return collectionView.selectionIndexPaths.first?.item ?? 0
+            }()
+            let newIndex = max(0, min(files.count - 1, currentIndex + offset))
+            let newPath = IndexPath(item: newIndex, section: 0)
+            lastUserSelectionIndexPath = newPath
+            collectionView.selectionIndexPaths = [newPath]
+            collectionView.scrollToItems(at: [newPath], scrollPosition: .centeredVertically)
+            scheduleSelectionSync()
+        }
+
+        private func moveSelection(byRow delta: Int) {
+            guard let collectionView, files.count > 0 else { return }
+            guard let layout = collectionView.collectionViewLayout as? NSCollectionViewFlowLayout else {
+                moveSelection(by: delta)
+                return
+            }
+            let itemWidth = layout.itemSize.width + layout.minimumInteritemSpacing
+            let viewportWidth = collectionView.bounds.width - layout.sectionInset.left - layout.sectionInset.right
+            let columnCount = max(1, Int((viewportWidth + layout.minimumInteritemSpacing) / itemWidth))
+
+            let currentIndex: Int = {
+                if let path = lastUserSelectionIndexPath {
+                    return path.item
+                }
+                return collectionView.selectionIndexPaths.first?.item ?? 0
+            }()
+            let newIndex = max(0, min(files.count - 1, currentIndex + delta * columnCount))
+            let newPath = IndexPath(item: newIndex, section: 0)
+            lastUserSelectionIndexPath = newPath
+            collectionView.selectionIndexPaths = [newPath]
+            collectionView.scrollToItems(at: [newPath], scrollPosition: .centeredVertically)
+            scheduleSelectionSync()
         }
 
         func numberOfSections(in collectionView: NSCollectionView) -> Int { 1 }
@@ -315,14 +376,14 @@ struct IconCollectionViewRepresentable: NSViewRepresentable {
 
             guard let indexPath = effectiveIndexPaths.first, indexPath.item < files.count else { return nil }
             let file = files[indexPath.item]
-            let menu = NSMenu(title: "파일")
-            let showInFinder = NSMenuItem(title: "Finder에서 보기", action: #selector(openInFinder(_:)), keyEquivalent: "")
+            let menu = NSMenu(title: NSLocalizedString("menu.file", comment: "File menu title"))
+            let showInFinder = NSMenuItem(title: NSLocalizedString("contextMenu.showInFinder", comment: "Show in Finder"), action: #selector(openInFinder(_:)), keyEquivalent: "")
             showInFinder.target = self
             showInFinder.representedObject = file
             menu.addItem(showInFinder)
 
             if file.isDirectory == false {
-                let openItem = NSMenuItem(title: "파일 열기", action: #selector(openFile(_:)), keyEquivalent: "")
+                let openItem = NSMenuItem(title: NSLocalizedString("contextMenu.openFile", comment: "Open file"), action: #selector(openFile(_:)), keyEquivalent: "")
                 openItem.target = self
                 openItem.representedObject = file
                 menu.addItem(openItem)
@@ -463,6 +524,7 @@ private struct IconCollectionLayoutMetrics {
 
         private let roundedBackground = NSView()
         private let thumbnailView = NSImageView()
+        private let tagIndicatorView = NSView()
         private let nameLabel = NSTextField(labelWithString: "")
         private let detailLabel = NSTextField(labelWithString: "")
         private let contentStack = NSStackView()
@@ -495,6 +557,20 @@ private struct IconCollectionLayoutMetrics {
         thumbnailView.wantsLayer = true
         thumbnailView.layer?.cornerRadius = 10
         thumbnailView.layer?.masksToBounds = true
+
+        tagIndicatorView.wantsLayer = true
+        tagIndicatorView.layer?.cornerRadius = 5
+        tagIndicatorView.layer?.masksToBounds = true
+        tagIndicatorView.translatesAutoresizingMaskIntoConstraints = false
+        tagIndicatorView.isHidden = true
+        thumbnailView.addSubview(tagIndicatorView)
+
+        NSLayoutConstraint.activate([
+            tagIndicatorView.widthAnchor.constraint(equalToConstant: 10),
+            tagIndicatorView.heightAnchor.constraint(equalToConstant: 10),
+            tagIndicatorView.trailingAnchor.constraint(equalTo: thumbnailView.trailingAnchor, constant: -4),
+            tagIndicatorView.bottomAnchor.constraint(equalTo: thumbnailView.bottomAnchor, constant: -4)
+        ])
 
         nameLabel.font = .systemFont(ofSize: 13, weight: .medium)
         nameLabel.lineBreakMode = .byTruncatingMiddle
@@ -552,11 +628,13 @@ private struct IconCollectionLayoutMetrics {
         thumbnailTask = nil
         currentFileID = nil
         thumbnailView.image = nil
+        tagIndicatorView.isHidden = true
     }
 
     override var isSelected: Bool {
         didSet {
             updateSelectionAppearance()
+            view.setAccessibilitySelected(isSelected)
         }
     }
 
@@ -566,6 +644,15 @@ private struct IconCollectionLayoutMetrics {
         view.toolTip = file.url.path
         nameLabel.stringValue = file.displayName
         detailLabel.stringValue = detailText(for: file)
+        view.setAccessibilityElement(true)
+        view.setAccessibilityLabel("\(file.displayName), \(detailText(for: file))")
+
+        if let color = file.primaryTagColor {
+            tagIndicatorView.layer?.backgroundColor = color.cgColor
+            tagIndicatorView.isHidden = false
+        } else {
+            tagIndicatorView.isHidden = true
+        }
 
         let thumbSize = metrics.thumbnailSize
         thumbnailWidthConstraint?.constant = thumbSize.width
@@ -622,7 +709,7 @@ private struct IconCollectionLayoutMetrics {
 
     private func detailText(for file: FileItem) -> String {
         if file.isDirectory {
-            return "폴더"
+            return NSLocalizedString("folder", comment: "Folder label")
         }
         if let size = file.fileSize {
             let sizeText = IconCollectionItem.sizeFormatter.string(fromByteCount: size)
@@ -636,7 +723,7 @@ private struct IconCollectionLayoutMetrics {
         CATransaction.setDisableActions(true)
 
         let borderColor = isSelected ? NSColor.controlAccentColor.cgColor : NSColor.clear.cgColor
-        let backgroundColor: NSColor = isSelected ? NSColor.controlAccentColor.withAlphaComponent(0.18) : NSColor.windowBackgroundColor
+        let backgroundColor: NSColor = isSelected ? NSColor.controlAccentColor.withAlphaComponent(0.30) : NSColor.windowBackgroundColor
 
         if let layer = roundedBackground.layer {
             layer.borderColor = borderColor

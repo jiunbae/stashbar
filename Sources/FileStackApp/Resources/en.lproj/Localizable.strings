@@ -1,0 +1,110 @@
+/* File Stack - English Localization */
+
+/* MARK: - View Modes (Models.swift) */
+"view.mode.icon" = "Icon";
+"view.mode.list" = "List";
+"view.mode.hierarchy" = "Hierarchy";
+
+/* MARK: - Sort Options (Models.swift) */
+"sort.option.name" = "Name";
+"sort.option.kind" = "Kind";
+"sort.option.dateModified" = "Date Modified";
+"sort.option.size" = "Size";
+
+/* MARK: - Sort Directions (Models.swift) */
+"sort.direction.ascending" = "Ascending";
+"sort.direction.descending" = "Descending";
+
+/* MARK: - Generic Labels (Models.swift) */
+"unknown" = "Unknown";
+"folder" = "Folder";
+
+/* MARK: - NSOpenPanel (FileStackController.swift) */
+"panel.select" = "Select";
+"panel.selectFolder" = "Select Folder to Watch";
+
+/* MARK: - Error Messages (FileStackController.swift) */
+"error.loginItem" = "Failed to enable launch at login: %@";
+"error.fileNotFound" = "%@: File not found.";
+"error.pasteFailed" = "Failed to paste files:\n%@";
+"error.trashFailed" = "Failed to move to Trash:\n%@";
+"error.staleBookmarks" = "The following folders could not be restored because their access has expired:\n%@\nPlease re-add these folders.";
+"error.pathInaccessible" = "Cannot access the selected path.";
+"error.duplicateFolder" = "This folder has already been added.";
+"error.watcherCreateFailed" = "Failed to create folder watcher stream.";
+"error.watcherStartFailed" = "Failed to start folder watcher stream.";
+"error.watcherFailed" = "Folder watcher failed: %@";
+"error.uniqueFilenameFailed" = "Could not generate a unique destination filename.";
+
+/* MARK: - Alert (ContentView.swift, SettingsView.swift) */
+"alert.error.title" = "Something Went Wrong";
+"button.ok" = "OK";
+
+/* MARK: - Empty States (ContentView.swift) */
+"emptyState.addFolders" = "Add folders to watch";
+"emptyState.addFolderHint" = "Click the folder icon above to add a folder and start browsing files.";
+"emptyState.noFiles" = "No Files to Show";
+"emptyState.noFilesHint" = "Take a screenshot or add files to the folder to see them here.";
+"emptyState.noSubItems" = "No Sub-Items";
+"emptyState.noSubItemsHint" = "Add a new folder or file to explore it here.";
+"emptyState.noSearchResults" = "No Matching Files";
+"emptyState.noSearchResultsHint" = "Try a different search term.";
+
+/* MARK: - Sort UI (ContentView.swift) */
+"sort.by" = "Sort By";
+"sort.by.tooltip" = "Sort By: %@";
+
+/* MARK: - Picker Labels (ContentView.swift) */
+"picker.folder" = "Folder";
+
+/* MARK: - Toolbar Buttons (ContentView.swift) */
+"button.addFolder" = "Add Folder";
+"button.removeFolder" = "Remove Folder";
+"button.refresh" = "Refresh";
+
+/* MARK: - Slider (ContentView.swift) */
+"slider.iconSize" = "Adjust icon size";
+
+/* MARK: - Search (ContentView.swift) */
+"search.placeholder" = "Search files";
+
+/* MARK: - Context Menu (ContentView.swift, IconCollectionView.swift) */
+"contextMenu.showInFinder" = "Show in Finder";
+"contextMenu.openFile" = "Open File";
+
+/* MARK: - Loading States (ContentView.swift) */
+"loading.folderStructure" = "Loading folder structure…";
+
+/* MARK: - Settings (SettingsView.swift) */
+"settings.section.general" = "General";
+"settings.launchAtLogin" = "Launch at Login";
+"settings.maxItems" = "Maximum Items per Folder";
+"settings.maxItems.count" = "%d items";
+"settings.section.view" = "View";
+"settings.defaultViewMode" = "Default View Mode";
+"settings.previewSize" = "Preview Size: %@";
+"settings.section.folderManagement" = "Folder Management";
+"settings.noWatchedFolders" = "No watched folders.";
+"button.remove" = "Remove";
+"button.favorite" = "Add to Favorites";
+"button.unfavorite" = "Remove from Favorites";
+
+/* MARK: - Status Menu (main.swift) */
+"menu.settings" = "Settings…";
+"menu.quit" = "Quit";
+
+/* MARK: - Window Title (SettingsWindowController.swift) */
+"window.settings" = "File Stack Settings";
+
+/* MARK: - Context Menu Title (IconCollectionView.swift) */
+"menu.file" = "File";
+
+/* MARK: - Accessibility (ContentView.swift, IconCollectionView.swift) */
+"accessibility.sortButton" = "Sort files";
+"accessibility.sortDirectionButton" = "Toggle sort direction";
+"accessibility.viewModePicker" = "Change view mode";
+"accessibility.addFolderButton" = "Add a folder to watch";
+"accessibility.removeFolderButton" = "Remove the selected folder";
+"accessibility.refreshButton" = "Refresh file list";
+"accessibility.searchField" = "Search files in the current folder";
+"accessibility.doubleClickToOpen" = "Double-click to open";

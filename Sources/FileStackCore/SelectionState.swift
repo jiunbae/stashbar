@@ -4,12 +4,14 @@ import Foundation
 /// Selection state extracted from FileStackController so that selection changes do not
 /// invalidate views observing the controller's other published properties (folders,
 /// view mode, sort options, etc.). Only views that read selection observe this object.
-final class SelectionState: ObservableObject {
-    @Published private(set) var selectedFileIDs: Set<String> = []
-    @Published private(set) var primarySelectedFileID: String?
-    private(set) var selectionAnchorID: String?
+public final class SelectionState: ObservableObject {
+    @Published public private(set) var selectedFileIDs: Set<String> = []
+    @Published public private(set) var primarySelectedFileID: String?
+    public private(set) var selectionAnchorID: String?
 
-    func handleSelection(of file: FileItem, in files: [FileItem], modifiers: NSEvent.ModifierFlags) {
+    public init() {}
+
+    public func handleSelection(of file: FileItem, in files: [FileItem], modifiers: NSEvent.ModifierFlags) {
         guard let fileIndex = files.firstIndex(where: { $0.id == file.id }) else { return }
         let fileID = file.id
         let anchorID = selectionAnchorID ?? primarySelectedFileID ?? fileID
@@ -43,7 +45,7 @@ final class SelectionState: ObservableObject {
         }
     }
 
-    func updateSelection(ids: Set<String>, primaryID: String?, in files: [FileItem]) {
+    public func updateSelection(ids: Set<String>, primaryID: String?, in files: [FileItem]) {
         let validIDs = Set(files.map { $0.id })
         let filtered = ids.intersection(validIDs)
         selectedFileIDs = filtered
@@ -62,13 +64,13 @@ final class SelectionState: ObservableObject {
         }
     }
 
-    func isFileSelected(_ file: FileItem) -> Bool {
+    public func isFileSelected(_ file: FileItem) -> Bool {
         selectedFileIDs.contains(file.id)
     }
 
     /// Reconcile current selection against a new file list. Drops invalid IDs and
     /// auto-promotes a primary when the previous primary disappears or none exists.
-    func reconcileWithFiles(_ files: [FileItem]) {
+    public func reconcileWithFiles(_ files: [FileItem]) {
         guard files.isEmpty == false else {
             if selectedFileIDs.isEmpty == false || primarySelectedFileID != nil {
                 selectedFileIDs = []
@@ -104,7 +106,7 @@ final class SelectionState: ObservableObject {
         }
     }
 
-    func clear() {
+    public func clear() {
         if selectedFileIDs.isEmpty == false || primarySelectedFileID != nil {
             selectedFileIDs = []
             primarySelectedFileID = nil

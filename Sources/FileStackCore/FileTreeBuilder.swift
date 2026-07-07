@@ -1,14 +1,19 @@
 import Foundation
 
-struct FileSystemEntry: Identifiable {
-    let file: FileItem
-    var children: [FileSystemEntry]?
+public struct FileSystemEntry: Identifiable {
+    public let file: FileItem
+    public var children: [FileSystemEntry]?
 
-    var id: String { file.id }
-    var isDirectory: Bool { file.isDirectory }
+    public var id: String { file.id }
+    public var isDirectory: Bool { file.isDirectory }
+
+    public init(file: FileItem, children: [FileSystemEntry]?) {
+        self.file = file
+        self.children = children
+    }
 }
 
-enum FileTreeBuilder {
+public enum FileTreeBuilder {
     private static let resourceKeys: Set<URLResourceKey> = [
         .localizedNameKey,
         .contentModificationDateKey,
@@ -17,7 +22,7 @@ enum FileTreeBuilder {
         .isDirectoryKey
     ]
 
-    static func buildTree(at rootURL: URL, depthLimit: Int = 3, childLimit: Int = 80) -> FileSystemEntry? {
+    public static func buildTree(at rootURL: URL, depthLimit: Int = 3, childLimit: Int = 80) -> FileSystemEntry? {
         guard let values = try? rootURL.resourceValues(forKeys: resourceKeys) else {
             return nil
         }

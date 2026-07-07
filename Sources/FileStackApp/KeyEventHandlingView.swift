@@ -1,4 +1,5 @@
 import AppKit
+import FileStackCore
 import QuickLook
 import QuickLookUI
 import SwiftUI

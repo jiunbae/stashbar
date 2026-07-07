@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import FileStackCore
 import Foundation
 import os.log
 import ServiceManagement
@@ -26,6 +27,7 @@ final class FileStackController: ObservableObject {
     @Published var previewScale: Double
     @Published var sortOption: SortOption
     @Published var sortDirection: SortDirection
+    @Published var searchText: String = ""
     @Published private(set) var launchesAtLogin: Bool
 
     /// Monotonic counter incremented whenever the file list of any watched folder changes.
@@ -40,7 +42,12 @@ final class FileStackController: ObservableObject {
     }
 
     var currentFiles: [FileItem] {
-        cachedCurrentFiles
+        if searchText.isEmpty {
+            return cachedCurrentFiles
+        }
+        return cachedCurrentFiles.filter {
+            $0.displayName.localizedStandardContains(searchText)
+        }
     }
 
     private var cachedCurrentFiles: [FileItem] = []
@@ -63,7 +70,9 @@ final class FileStackController: ObservableObject {
     /// URLs require a balanced stop on removal; URLs from NSOpenPanel have implicit
     /// access for the current session and are not tracked here).
     private var securityScopedURLs: [UUID: URL] = [:]
-    private let maxItemsPerFolder = 40
+    private static let maxItemsKey = "MaxItemsPerFolderPreference"
+    private let maxItemsPerFolderRange: ClosedRange<Int> = 10...200
+    @Published var maxItemsPerFolder: Int
     private let workerQueue = DispatchQueue(label: "com.file-stack.controller.files", qos: .userInitiated)
     private let log = Logger(subsystem: "com.file-stack.app", category: "controller")
     private let fileManager = FileManager.default
@@ -72,13 +81,15 @@ final class FileStackController: ObservableObject {
     private let sortOptionKey = "SortOptionPreference"
     private let sortDirectionKey = "SortDirectionPreference"
     private let launchAtLoginKey = "LaunchAtLoginPreference"
+    private let favoriteFolderPathsKey = "FavoriteFolderPaths_v1"
+    private var favoriteFolderPaths: Set<String> = []
     private let previewScaleRange: ClosedRange<Double> = 0.4...1.8
     private let cutPasteboardType = NSPasteboard.PasteboardType("com.file-stack.cut-indicator")
     private var pendingCutURLs: [URL] = []
     private var isInterfaceActive = false
     private var pendingReloadFolderIDs: Set<UUID> = []
 
-    init() {
+    init(loadPersistedState: Bool = true) {
         if let rawValue = defaults.string(forKey: viewModeKey),
            let mode = FileViewMode(rawValue: rawValue) {
             viewMode = mode
@@ -98,7 +109,13 @@ final class FileStackController: ObservableObject {
             launchesAtLogin = defaults.bool(forKey: launchAtLoginKey)
         }
 
-        loadPersistedFolders()
+        let storedMaxItems = defaults.integer(forKey: Self.maxItemsKey)
+        maxItemsPerFolder = storedMaxItems > 0 ? min(max(storedMaxItems, 10), 200) : 40
+
+        if loadPersistedState {
+            loadFavorites()
+            loadPersistedFolders()
+        }
     }
 
     deinit {
@@ -120,8 +137,8 @@ final class FileStackController: ObservableObject {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = false
-        panel.prompt = "선택"
-        panel.title = "감시할 폴더 선택"
+        panel.prompt = NSLocalizedString("panel.select", comment: "NSOpenPanel select button")
+        panel.title = NSLocalizedString("panel.selectFolder", comment: "NSOpenPanel title")
 
         NSApp.activate(ignoringOtherApps: true)
 
@@ -140,6 +157,19 @@ final class FileStackController: ObservableObject {
         folders.removeAll { $0.id == folder.id }
         saveFolders()
         ensureSelectedFolderIsValid()
+    }
+
+    func toggleFavorite(_ folder: WatchedFolder) {
+        guard let index = folders.firstIndex(where: { $0.id == folder.id }) else { return }
+        let newValue = !folders[index].isFavorite
+        folders[index].isFavorite = newValue
+        if newValue {
+            favoriteFolderPaths.insert(folder.url.path)
+        } else {
+            favoriteFolderPaths.remove(folder.url.path)
+        }
+        saveFavorites()
+        sortFolders()
     }
 
     func refreshSelectedFolder() {
@@ -191,6 +221,23 @@ final class FileStackController: ObservableObject {
         refreshSelectedFolder()
     }
 
+    func setSearchText(_ text: String) {
+        guard searchText != text else { return }
+        searchText = text
+        selectionState.reconcileWithFiles(currentFiles)
+        if viewMode == .icon, isInterfaceActive {
+            prefetchThumbnails(for: currentFiles)
+        }
+    }
+
+    func setMaxItemsPerFolder(_ count: Int) {
+        let clamped = min(max(count, maxItemsPerFolderRange.lowerBound), maxItemsPerFolderRange.upperBound)
+        guard maxItemsPerFolder != clamped else { return }
+        maxItemsPerFolder = clamped
+        defaults.set(clamped, forKey: Self.maxItemsKey)
+        refreshSelectedFolder()
+    }
+
     func setInterfaceActive(_ active: Bool) {
         dispatchPrecondition(condition: .onQueue(.main))
         guard isInterfaceActive != active else { return }
@@ -203,6 +250,66 @@ final class FileStackController: ObservableObject {
 
     func clearAlert() {
         alertMessage = nil
+    }
+
+    func configurePreview(
+        folders urls: [URL],
+        selectedFolderURL: URL,
+        viewMode: FileViewMode,
+        previewScale: Double,
+        sortOption: SortOption,
+        sortDirection: SortDirection,
+        selectedDisplayNames: [String]
+    ) {
+        for watcher in watchers.values {
+            watcher.cancel()
+        }
+        watchers.removeAll()
+
+        for url in securityScopedURLs.values {
+            url.stopAccessingSecurityScopedResource()
+        }
+        securityScopedURLs.removeAll()
+
+        pendingReloadFolderIDs.removeAll()
+        alertMessage = nil
+
+        self.viewMode = viewMode
+        self.previewScale = min(max(previewScale, previewScaleRange.lowerBound), previewScaleRange.upperBound)
+        self.sortOption = sortOption
+        self.sortDirection = sortDirection
+
+        let normalizedSelectedURL = selectedFolderURL.standardizedFileURL
+        folders = urls.compactMap { url in
+            let normalizedURL = url.standardizedFileURL
+            guard directoryExists(at: normalizedURL) else { return nil }
+            let files = Self.loadFiles(
+                at: normalizedURL,
+                limit: maxItemsPerFolder,
+                sortOption: sortOption,
+                sortDirection: sortDirection
+            )
+            return WatchedFolder(id: UUID(), url: normalizedURL, files: files, isFavorite: favoriteFolderPaths.contains(normalizedURL.path))
+        }
+        sortFolders()
+
+        selectedFolderID = folders.first(where: { $0.url == normalizedSelectedURL })?.id ?? folders.first?.id
+        refreshCurrentFilesCache()
+
+        let selectedIDs = Set(
+            currentFiles
+                .filter { selectedDisplayNames.contains($0.displayName) }
+                .map(\.id)
+        )
+        let primaryID = currentFiles.first { selectedDisplayNames.contains($0.displayName) }?.id
+        selectionState.updateSelection(ids: selectedIDs, primaryID: primaryID, in: currentFiles)
+
+        fileListGeneration &+= 1
+        isInterfaceActive = true
+
+        if viewMode == .icon {
+            prefetchThumbnails(for: currentFiles)
+        }
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
@@ -219,7 +326,7 @@ final class FileStackController: ObservableObject {
                 defaults.set(enabled, forKey: launchAtLoginKey)
             } catch {
                 launchesAtLogin = !enabled
-                alertMessage = "로그인 시 실행 설정에 실패했습니다: \(error.localizedDescription)"
+                alertMessage = String(format: NSLocalizedString("error.loginItem", comment: "Login item registration error"), error.localizedDescription)
                 log.error("Failed to toggle login item: \(error.localizedDescription, privacy: .public)")
             }
         } else {
@@ -260,7 +367,7 @@ final class FileStackController: ObservableObject {
 
             for sourceURL in urls {
                 guard self.fileManager.fileExists(atPath: sourceURL.path) else {
-                    errors.append("\(sourceURL.lastPathComponent): 파일을 찾을 수 없습니다.")
+                    errors.append(String(format: NSLocalizedString("error.fileNotFound", comment: "File not found error"), sourceURL.lastPathComponent))
                     continue
                 }
                 do {
@@ -277,7 +384,7 @@ final class FileStackController: ObservableObject {
 
             DispatchQueue.main.async {
                 if errors.isEmpty == false {
-                    self.alertMessage = "파일 붙여넣기에 실패했습니다:\n" + errors.joined(separator: "\n")
+                    self.alertMessage = String(format: NSLocalizedString("error.pasteFailed", comment: "Paste failed error"), errors.joined(separator: "\n"))
                     NSSound.beep()
                 }
                 self.refreshSelectedFolder()
@@ -307,7 +414,7 @@ final class FileStackController: ObservableObject {
 
             DispatchQueue.main.async {
                 if errors.isEmpty == false {
-                    self.alertMessage = "휴지통으로 이동하지 못했습니다:\n" + errors.joined(separator: "\n")
+                    self.alertMessage = String(format: NSLocalizedString("error.trashFailed", comment: "Trash failed error"), errors.joined(separator: "\n"))
                     NSSound.beep()
                 }
                 self.refreshSelectedFolder()
@@ -335,6 +442,7 @@ final class FileStackController: ObservableObject {
         migrateLegacyPathsIfNeeded()
 
         let storedBookmarks = (defaults.array(forKey: bookmarksKey) as? [Data]) ?? []
+        var staleBookmarkNames: [String] = []
 
         for data in storedBookmarks {
             var stale = false
@@ -346,6 +454,10 @@ final class FileStackController: ObservableObject {
             ) else { continue }
             guard url.startAccessingSecurityScopedResource() else { continue }
 
+            if stale {
+                staleBookmarkNames.append(url.lastPathComponent)
+            }
+
             let beforeCount = folders.count
             addFolder(url: url, persist: false, suppressAlert: true)
             if folders.count > beforeCount, let addedID = folders.last?.id {
@@ -353,6 +465,11 @@ final class FileStackController: ObservableObject {
             } else {
                 url.stopAccessingSecurityScopedResource()
             }
+        }
+
+        if staleBookmarkNames.isEmpty == false {
+            let list = staleBookmarkNames.map { "- \($0)" }.joined(separator: "\n")
+            alertMessage = String(format: NSLocalizedString("error.staleBookmarks", comment: "Stale bookmark error"), list)
         }
 
         if folders.isEmpty, let suggested = detectScreenshotFolder() {
@@ -391,20 +508,21 @@ final class FileStackController: ObservableObject {
 
         guard directoryExists(at: standardized) else {
             if !suppressAlert {
-                alertMessage = "선택한 경로에 접근할 수 없습니다."
+                alertMessage = NSLocalizedString("error.pathInaccessible", comment: "Path inaccessible error")
             }
             return
         }
 
         guard folders.contains(where: { $0.url == standardized }) == false else {
             if !suppressAlert {
-                alertMessage = "이미 추가된 폴더입니다."
+                alertMessage = NSLocalizedString("error.duplicateFolder", comment: "Duplicate folder error")
             }
             return
         }
 
-        let folder = WatchedFolder(id: UUID(), url: standardized, files: [])
+        let folder = WatchedFolder(id: UUID(), url: standardized, files: [], isFavorite: favoriteFolderPaths.contains(standardized.path))
         folders.append(folder)
+        sortFolders()
         ensureSelectedFolderIsValid(with: folder.id)
         startWatcher(for: folder)
         reload(folderID: folder.id)
@@ -448,11 +566,11 @@ final class FileStackController: ObservableObject {
             }
             watchers[folder.id] = watcher
         } catch DirectoryWatcher.WatcherError.failedToCreateStream {
-            alertMessage = "폴더 감시 스트림 생성에 실패했습니다."
+            alertMessage = NSLocalizedString("error.watcherCreateFailed", comment: "Watcher stream creation error")
         } catch DirectoryWatcher.WatcherError.failedToStartStream {
-            alertMessage = "폴더 감시 스트림 시작에 실패했습니다."
+            alertMessage = NSLocalizedString("error.watcherStartFailed", comment: "Watcher stream start error")
         } catch {
-            alertMessage = "폴더 감시에 실패했습니다: \(error.localizedDescription)"
+            alertMessage = String(format: NSLocalizedString("error.watcherFailed", comment: "Watcher failed error"), error.localizedDescription)
         }
     }
 
@@ -517,6 +635,28 @@ final class FileStackController: ObservableObject {
         defaults.set(bookmarks, forKey: bookmarksKey)
     }
 
+    private func loadFavorites() {
+        let paths = defaults.stringArray(forKey: favoriteFolderPathsKey) ?? []
+        favoriteFolderPaths = Set(paths)
+    }
+
+    private func saveFavorites() {
+        defaults.set(Array(favoriteFolderPaths), forKey: favoriteFolderPathsKey)
+    }
+
+    private func sortFolders() {
+        var favorites: [WatchedFolder] = []
+        var others: [WatchedFolder] = []
+        for folder in folders {
+            if folder.isFavorite {
+                favorites.append(folder)
+            } else {
+                others.append(folder)
+            }
+        }
+        folders = favorites + others
+    }
+
     private func refreshCurrentFilesCache() {
         cachedCurrentFiles = selectedFolder?.files ?? []
     }
@@ -565,7 +705,7 @@ final class FileStackController: ObservableObject {
         while fileManager.fileExists(atPath: destination.path) {
             guard copyIndex <= maxAttempts else {
                 throw NSError(domain: "FileStackController", code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: "고유한 대상 파일명을 생성하지 못했습니다."
+                    NSLocalizedDescriptionKey: NSLocalizedString("error.uniqueFilenameFailed", comment: "Unique filename generation error")
                 ])
             }
             let suffix = copyIndex == 1 ? " copy" : " copy \(copyIndex)"
@@ -615,7 +755,8 @@ final class FileStackController: ObservableObject {
             .contentModificationDateKey,
             .typeIdentifierKey,
             .fileSizeKey,
-            .isDirectoryKey
+            .isDirectoryKey,
+            .tagNamesKey
         ]
 
         guard let urls = try? FileManager.default.contentsOfDirectory(

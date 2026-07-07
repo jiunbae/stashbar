@@ -1,4 +1,5 @@
 import AppKit
+import FileStackCore
 import SwiftUI
 
 struct ContentView: View {
@@ -42,6 +43,13 @@ struct ContentView: View {
         )
     }
 
+    private var searchTextBinding: Binding<String> {
+        Binding(
+            get: { controller.searchText },
+            set: { controller.setSearchText($0) }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             headerSection
@@ -51,8 +59,8 @@ struct ContentView: View {
         .padding(16)
         .frame(width: 360, height: 420)
         .background(Color(NSColor.windowBackgroundColor))
-        .alert("문제가 발생했습니다", isPresented: alertBinding) {
-            Button("확인", role: .cancel) {
+        .alert(Text(NSLocalizedString("alert.error.title", comment: "Alert title")), isPresented: alertBinding) {
+            Button(NSLocalizedString("button.ok", comment: "OK button"), role: .cancel) {
                 controller.clearAlert()
             }
         } message: {
@@ -68,7 +76,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 0) {
                 if controller.folders.isEmpty {
-                    Text("감시할 폴더를 추가하세요")
+                    Text(NSLocalizedString("emptyState.addFolders", comment: "Empty state message"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else if let selected = controller.selectedFolder {
@@ -76,13 +84,20 @@ struct ContentView: View {
                         Image(systemName: "folder.fill")
                             .foregroundStyle(.secondary)
                             .imageScale(.small)
-                        Picker("폴더", selection: Binding(
+                        Picker(NSLocalizedString("picker.folder", comment: "Folder picker label"), selection: Binding(
                             get: { controller.selectedFolderID ?? selected.id },
                             set: { controller.selectedFolderID = $0 }
                         )) {
                             ForEach(controller.folders) { folder in
-                                Text(folder.displayName)
-                                    .tag(folder.id as UUID?)
+                                HStack(spacing: 4) {
+                                    if folder.isFavorite {
+                                        Image(systemName: "star.fill")
+                                            .foregroundStyle(.yellow)
+                                            .imageScale(.small)
+                                    }
+                                    Text(folder.displayName)
+                                }
+                                .tag(folder.id as UUID?)
                             }
                         }
                         .labelsHidden()
@@ -94,7 +109,7 @@ struct ContentView: View {
 
                 HStack(spacing: 0) {
                     Menu {
-                        Picker("정렬 기준", selection: sortOptionBinding) {
+                        Picker(NSLocalizedString("sort.by", comment: "Sort by menu label"), selection: sortOptionBinding) {
                             ForEach(SortOption.allCases) { option in
                                 Text(option.title).tag(option)
                             }
@@ -107,7 +122,8 @@ struct ContentView: View {
                     }
                     .menuStyle(.borderlessButton)
                     .fixedSize()
-                    .help("정렬 기준: \(controller.sortOption.title)")
+                    .accessibilityLabel(NSLocalizedString("accessibility.sortButton", comment: ""))
+                    .help(String(format: NSLocalizedString("sort.by.tooltip", comment: "Sort by tooltip"), controller.sortOption.title))
 
                     Button {
                         let newDirection: SortDirection = controller.sortDirection == .descending ? .ascending : .descending
@@ -118,6 +134,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.bordered)
                     .fixedSize()
+                    .accessibilityLabel(NSLocalizedString("accessibility.sortDirectionButton", comment: ""))
                     .help(controller.sortDirection.title)
 
                     Picker("", selection: viewModeBinding) {
@@ -129,12 +146,14 @@ struct ContentView: View {
                     }
                     .pickerStyle(.segmented)
                     .fixedSize()
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(NSLocalizedString("accessibility.viewModePicker", comment: ""))
                 }
                 .fixedSize()
             }
 
             if controller.folders.isEmpty {
-                Text("상단 아이콘을 눌러 폴더를 등록하면 파일을 바로 모아볼 수 있습니다.")
+                Text(NSLocalizedString("emptyState.addFolderHint", comment: "Add folder hint"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if let selected = controller.selectedFolder {
@@ -143,6 +162,9 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                SearchField(text: searchTextBinding)
+                    .frame(height: 22)
+                    .accessibilityLabel(NSLocalizedString("accessibility.searchField", comment: "Search field label"))
             }
         }
     }
@@ -151,15 +173,27 @@ struct ContentView: View {
         Group {
             if controller.currentFiles.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "tray")
+                    Image(systemName: controller.searchText.isEmpty ? "tray" : "magnifyingglass")
                         .font(.system(size: 24))
                         .foregroundStyle(.secondary)
-                    Text("표시할 파일이 없습니다.")
+                    Text(controller.searchText.isEmpty
+                         ? NSLocalizedString("emptyState.noFiles", comment: "No files empty state")
+                         : NSLocalizedString("emptyState.noSearchResults", comment: "No search results"))
                         .font(.subheadline)
-                    Text("스크린샷을 찍거나 파일을 폴더에 추가하면 여기에서 바로 확인할 수 있습니다.")
+                    Text(controller.searchText.isEmpty
+                         ? NSLocalizedString("emptyState.noFilesHint", comment: "No files hint")
+                         : NSLocalizedString("emptyState.noSearchResultsHint", comment: "No search results hint"))
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
+                    if controller.folders.isEmpty {
+                        Button {
+                            controller.presentFolderSelectionPanel()
+                        } label: {
+                            Label(NSLocalizedString("button.addFolder", comment: "Add folder button"), systemImage: "folder.badge.plus")
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -172,6 +206,20 @@ struct ContentView: View {
                     hierarchyView
                 }
             }
+        }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            guard let provider = providers.first else { return false }
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url = url else { return }
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                   isDirectory.boolValue {
+                    DispatchQueue.main.async {
+                        self.controller.addFolder(url: url)
+                    }
+                }
+            }
+            return true
         }
     }
 
@@ -200,32 +248,35 @@ struct ContentView: View {
             Button {
                 controller.presentFolderSelectionPanel()
             } label: {
-                Label("폴더 추가", systemImage: "folder.badge.plus")
+                Label(NSLocalizedString("button.addFolder", comment: "Add folder button"), systemImage: "folder.badge.plus")
             }
             .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
-            .help("폴더 추가")
+            .accessibilityLabel(NSLocalizedString("accessibility.addFolderButton", comment: ""))
+            .help(NSLocalizedString("button.addFolder", comment: "Add folder button"))
 
             if let folder = controller.selectedFolder {
                 Button(role: .destructive) {
                     controller.removeFolder(folder)
                 } label: {
-                    Label("폴더 삭제", systemImage: "trash")
+                    Label(NSLocalizedString("button.removeFolder", comment: "Remove folder button"), systemImage: "trash")
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.bordered)
                 .disabled(controller.folders.count <= 1)
-                .help("폴더 삭제")
+                .accessibilityLabel(NSLocalizedString("accessibility.removeFolderButton", comment: ""))
+                .help(NSLocalizedString("button.removeFolder", comment: "Remove folder button"))
             }
 
             Button {
                 controller.refreshSelectedFolder()
             } label: {
-                Label("새로 고침", systemImage: "arrow.clockwise")
+                Label(NSLocalizedString("button.refresh", comment: "Refresh button"), systemImage: "arrow.clockwise")
             }
             .labelStyle(.iconOnly)
             .buttonStyle(.bordered)
-            .help("새로 고침")
+            .accessibilityLabel(NSLocalizedString("accessibility.refreshButton", comment: ""))
+            .help(NSLocalizedString("button.refresh", comment: "Refresh button"))
 
             iconScaleControl
 
@@ -243,7 +294,7 @@ private extension ContentView {
                 .foregroundStyle(.secondary)
             Slider(value: iconScaleBinding, in: 0.4...1.8)
                 .frame(maxWidth: 150)
-                .help("아이콘 크기 조절")
+                .help(NSLocalizedString("slider.iconSize", comment: "Icon size slider tooltip"))
         }
         .frame(width: controlWidth)
         .opacity(controller.viewMode == .icon ? 1 : 0)
@@ -281,6 +332,12 @@ private struct FileListRow: View {
                 }
 
                 Spacer(minLength: 8)
+
+                if let color = file.primaryTagColor {
+                    Circle()
+                        .fill(Color(color))
+                        .frame(width: 8, height: 8)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -300,7 +357,7 @@ private struct FileListRow: View {
 
     private var detailText: String {
         if file.isDirectory {
-            return "폴더"
+            return NSLocalizedString("folder", comment: "Folder label")
         }
 
         let time = file.relativeDateDescription
@@ -313,7 +370,7 @@ private struct FileListRow: View {
 
     private var background: some View {
         RoundedRectangle(cornerRadius: 10)
-            .fill(isSelected ? Color.accentColor.opacity(0.18) : Color(NSColor.controlBackgroundColor))
+            .fill(isSelected ? Color.accentColor.opacity(0.30) : Color(NSColor.controlBackgroundColor))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
@@ -362,10 +419,10 @@ private struct FileListContainer: View {
                         }
                     )
                     .contextMenu {
-                        Button("Finder에서 보기") {
+                        Button(NSLocalizedString("contextMenu.showInFinder", comment: "Show in Finder")) {
                             NSWorkspace.shared.activateFileViewerSelecting([file.url])
                         }
-                        Button("파일 열기") {
+                        Button(NSLocalizedString("contextMenu.openFile", comment: "Open file")) {
                             NSWorkspace.shared.open(file.url)
                         }
                     }
@@ -426,7 +483,7 @@ private struct HierarchyBrowser: View {
             if isLoading {
                 VStack(spacing: 8) {
                     ProgressView()
-                    Text("폴더 구조를 불러오는 중…")
+                    Text(NSLocalizedString("loading.folderStructure", comment: "Loading folder structure"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -442,11 +499,11 @@ private struct HierarchyBrowser: View {
                                 onOpen: onOpen
                             )
                             .contextMenu {
-                                Button("Finder에서 보기") {
+                                Button(NSLocalizedString("contextMenu.showInFinder", comment: "Show in Finder")) {
                                     NSWorkspace.shared.activateFileViewerSelecting([entry.file.url])
                                 }
                                 if entry.file.isDirectory == false {
-                                    Button("파일 열기") {
+                                    Button(NSLocalizedString("contextMenu.openFile", comment: "Open file")) {
                                         NSWorkspace.shared.open(entry.file.url)
                                     }
                                 }
@@ -462,9 +519,9 @@ private struct HierarchyBrowser: View {
                         Image(systemName: "folder")
                             .font(.system(size: 24))
                             .foregroundStyle(.secondary)
-                        Text("하위 항목이 없습니다.")
+                        Text(NSLocalizedString("emptyState.noSubItems", comment: "No sub-items"))
                             .font(.subheadline)
-                        Text("새로운 폴더나 파일을 추가하면 여기에서 탐색할 수 있습니다.")
+                        Text(NSLocalizedString("emptyState.noSubItemsHint", comment: "No sub-items hint"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -473,7 +530,7 @@ private struct HierarchyBrowser: View {
             } else {
                 VStack(spacing: 8) {
                     ProgressView()
-                    Text("폴더 구조를 불러오는 중…")
+                    Text(NSLocalizedString("loading.folderStructure", comment: "Loading folder structure"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -526,12 +583,18 @@ private struct FileHierarchyRow: View {
                 }
 
                 Spacer(minLength: 6)
+
+                if let color = entry.file.primaryTagColor {
+                    Circle()
+                        .fill(Color(color))
+                        .frame(width: 8, height: 8)
+                }
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
+                    .fill(isSelected ? Color.accentColor.opacity(0.30) : .clear)
             )
         }
         .buttonStyle(.plain)
@@ -546,7 +609,7 @@ private struct FileHierarchyRow: View {
 
     private var subtitleText: String? {
         if entry.file.isDirectory {
-            return "폴더"
+            return NSLocalizedString("folder", comment: "Folder label")
         }
         if let size = entry.file.fileSize {
             let sizeText = fileSizeFormatter.string(fromByteCount: size)
@@ -556,6 +619,43 @@ private struct FileHierarchyRow: View {
     }
 
     private var iconSize: CGSize { CGSize(width: 20, height: 20) }
+}
+
+private struct SearchField: NSViewRepresentable {
+    @Binding var text: String
+
+    func makeNSView(context: Context) -> NSSearchField {
+        let field = NSSearchField()
+        field.delegate = context.coordinator
+        field.placeholderString = NSLocalizedString("search.placeholder", comment: "")
+        field.font = .systemFont(ofSize: 12)
+        field.bezelStyle = .roundedBezel
+        return field
+    }
+
+    func updateNSView(_ nsView: NSSearchField, context: Context) {
+        if nsView.stringValue != text {
+            nsView.stringValue = text
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    final class Coordinator: NSObject, NSSearchFieldDelegate {
+        @Binding var text: String
+
+        init(text: Binding<String>) {
+            self._text = text
+        }
+
+        func controlTextDidChange(_ obj: Notification) {
+            if let field = obj.object as? NSSearchField {
+                text = field.stringValue
+            }
+        }
+    }
 }
 
 private let fileSizeFormatter: ByteCountFormatter = {
