@@ -1,8 +1,8 @@
-# File Stack — App Store Review Support
+# Stashbar — App Store Review Support
 
 ## Overview
 
-File Stack is a lightweight menu bar utility for macOS that lets users pin frequently-accessed folders to the menu bar and instantly browse their recent files. It is built entirely within the macOS App Sandbox and uses only Apple-approved APIs.
+Stashbar is a lightweight menu bar utility for macOS that lets users pin frequently-accessed folders to the menu bar and instantly browse their recent files. It is built entirely within the macOS App Sandbox and uses only Apple-approved APIs.
 
 ---
 
@@ -10,7 +10,7 @@ File Stack is a lightweight menu bar utility for macOS that lets users pin frequ
 
 ### English
 
-> File Stack is a menu bar utility (LSUIElement) for macOS that lets users watch selected folders and browse recent files from the menu bar.
+> Stashbar is a menu bar utility (LSUIElement) for macOS that lets users watch selected folders and browse recent files from the menu bar.
 >
 > **Sandbox & Folder Access:**
 > - The app uses NSOpenPanel to let users explicitly select folders they want to watch. No folders are accessed without explicit user action.
@@ -33,7 +33,7 @@ File Stack is a lightweight menu bar utility for macOS that lets users pin frequ
 
 ### Korean
 
-> File Stack는 macOS 메뉴바 유틸리티(LSUIElement)로, 사용자가 선택한 폴더를 감시하고 메뉴바에서 최근 파일을 탐색할 수 있습니다.
+> Stashbar는 macOS 메뉴바 유틸리티(LSUIElement)로, 사용자가 선택한 폴더를 감시하고 메뉴바에서 최근 파일을 탐색할 수 있습니다.
 >
 > **샌드박스 및 폴더 접근:**
 > - NSOpenPanel을 통해 사용자가 직접 폴더를 선택해야만 감시가 시작됩니다. 사용자의 명시적 동의 없이는 어떤 폴더에도 접근하지 않습니다.
@@ -61,7 +61,7 @@ File Stack is a lightweight menu bar utility for macOS that lets users pin frequ
 No account is required. The app works entirely with the user's local file system.
 
 To test the app:
-1. Launch File Stack from the menu bar.
+1. Launch Stashbar from the menu bar.
 2. Click the + button or drop a folder into the popover to add a watched folder.
 3. Browse recent files, switch folders, sort, change view modes, use Quick Look (Space), and perform file operations (copy/paste/trash).
 

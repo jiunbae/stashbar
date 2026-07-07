@@ -1,4 +1,4 @@
-/* File Stack - English Localization */
+/* Stashbar - English Localization */
 
 /* MARK: - View Modes (Models.swift) */
 "view.mode.icon" = "Icon";
@@ -94,7 +94,7 @@
 "menu.quit" = "Quit";
 
 /* MARK: - Window Title (SettingsWindowController.swift) */
-"window.settings" = "File Stack Settings";
+"window.settings" = "Stashbar Settings";
 
 /* MARK: - Context Menu Title (IconCollectionView.swift) */
 "menu.file" = "File";

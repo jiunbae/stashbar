@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
-FIXTURE_ROOT="/Users/Shared/File Stack"
+FIXTURE_ROOT="/Users/Shared/Stashbar"
 OUTPUT_DIR="${PROJECT_ROOT}/AppStore/screenshots-live/mac/ko-KR"
 EXECUTABLE_PATH="${PROJECT_ROOT}/.build/release/FileStackApp"
 
@@ -43,7 +43,7 @@ touch -t "202605041801" "${FIXTURE_ROOT}/Screenshots/Notes.txt"
 create_text_file "${FIXTURE_ROOT}/Downloads/Plan.md" $'# Plan\n- Finalize screenshots\n- Confirm localized metadata\n- Attach review notes for sandboxed folder access'
 touch -t "202605041805" "${FIXTURE_ROOT}/Downloads/Plan.md"
 
-create_text_file "${FIXTURE_ROOT}/Downloads/Tips.txt" $'Review Notes\n\nFile Stack accesses only folders selected by the user and stores security-scoped bookmarks for those choices.'
+create_text_file "${FIXTURE_ROOT}/Downloads/Tips.txt" $'Review Notes\n\nStashbar accesses only folders selected by the user and stores security-scoped bookmarks for those choices.'
 touch -t "202605041800" "${FIXTURE_ROOT}/Downloads/Tips.txt"
 
 create_text_file "${FIXTURE_ROOT}/Downloads/Sales.csv" $'date,downloads\n2026-05-01,124\n2026-05-02,141\n2026-05-03,166'

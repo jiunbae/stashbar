@@ -127,7 +127,7 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "File Stack")
+            button.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
             button.appearance = NSAppearance(named: .aqua)
         }
 

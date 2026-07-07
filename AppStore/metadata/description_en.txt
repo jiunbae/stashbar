@@ -1,6 +1,6 @@
-File Stack is a macOS productivity utility that puts your frequently accessed folders in the menu bar so you can check recent files instantly.
+Stashbar is a macOS productivity utility that puts your frequently accessed folders in the menu bar so you can check recent files instantly.
 
-Pin folders like Screenshots, Downloads, or project directories to the menu bar and browse their latest contents without keeping Finder in front. File Stack gives you a compact, organized view of recent files exactly where you need them.
+Pin folders like Screenshots, Downloads, or project directories to the menu bar and browse their latest contents without keeping Finder in front. Stashbar gives you a compact, organized view of recent files exactly where you need them.
 
 Features
 • Watch multiple folders: Add folders and see live updates as files change

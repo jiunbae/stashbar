@@ -1,6 +1,6 @@
-# File Stack — Accessibility Compliance
+# Stashbar — Accessibility Compliance
 
-File Stack is designed to be accessible to all users. The following accessibility features are implemented:
+Stashbar is designed to be accessible to all users. The following accessibility features are implemented:
 
 ## VoiceOver Support
 

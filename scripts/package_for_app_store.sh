@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build, sign, and package File Stack for the Mac App Store.
+# Build, sign, and package Stashbar for the Mac App Store.
 #
 # This script wraps build_app.sh with App Store-specific signing, then runs
 # productbuild to produce an installer .pkg. Optionally validates or uploads
@@ -45,7 +45,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 
 ACTION="${ACTION:-package}"
-APP_NAME="${APP_DISPLAY_NAME:-File Stack}"
+APP_NAME="${APP_DISPLAY_NAME:-Stashbar}"
 APP_BUNDLE_PATH="${PROJECT_ROOT}/dist/${APP_NAME}.app"
 PKG_PATH="${PROJECT_ROOT}/dist/${APP_NAME}.pkg"
 

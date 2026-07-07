@@ -1,4 +1,4 @@
-# File Stack — Screenshot to Feature Mapping
+# Stashbar — Screenshot to Feature Mapping
 
 This document maps each App Store screenshot to the specific features it demonstrates, helping reviewers understand the app's functionality at a glance.
 

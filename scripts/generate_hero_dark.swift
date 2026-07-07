@@ -281,7 +281,7 @@ darkIcon.draw(in: nsRect(iconRect), from: NSRect(origin: .zero, size: darkIcon.s
 NSGraphicsContext.current?.restoreGraphicsState()
 
 // Headline and subcopy — light text on dark background
-let headline = "File Stack"
+let headline = "Stashbar"
 let subCopy = "원하는 폴더를 메뉴바에 고정해 언제든 바로 열람"
 let bulletCopy = "폴더별 최신 파일 · 퀵 룩 · 복사/붙여넣기까지 한 번에"
 

@@ -1,8 +1,8 @@
-# App Store Privacy Nutrition Label — File Stack
+# App Store Privacy Nutrition Label — Stashbar
 
 ## Summary
 
-File Stack does not collect any user data. All functionality is local to the device.
+Stashbar does not collect any user data. All functionality is local to the device.
 The app does not use analytics, advertising, crash reporting, or any third-party services that transmit data.
 
 ---

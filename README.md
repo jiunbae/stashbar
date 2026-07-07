@@ -1,6 +1,6 @@
 <div align="center">
 
-# File Stack
+# Stashbar
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-blue?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/swift-5.9-orange?logo=swift&logoColor=white)](https://swift.org)
@@ -11,7 +11,7 @@
 
 [**🌐 웹사이트**](https://jiunbae.github.io/file-stack/) · [**🔒 개인정보 처리방침**](https://jiunbae.github.io/file-stack/privacy.html) · [**🐛 이슈 보고**](https://github.com/jiunbae/file-stack/issues)
 
-![File Stack hero](Resources/hero.png)
+![Stashbar hero](Resources/hero.png)
 
 </div>
 
@@ -26,7 +26,7 @@
 ⌨️  Finder 단축키 그대로 (⌘C/⌘X/⌘V, ⌘⌫, Space)
 ```
 
-![File Stack 미리보기](Resources/preview.png)
+![Stashbar 미리보기](Resources/preview.png)
 
 ## 주요 기능
 
@@ -59,7 +59,7 @@ swift run
 
 # 또는 .app 번들 빌드 후 실행
 scripts/build_app.sh
-open "dist/File Stack.app"
+open "dist/Stashbar.app"
 ```
 
 ### Mac App Store
@@ -171,7 +171,7 @@ scripts/upload_to_app_store.sh           # 키체인 해제 + 빌드 + 업로드
 
 ## 개인정보 및 권한
 
-File Stack은 데이터를 수집하지 않으며 네트워크에 접속하지 않습니다. 사용자가 직접 선택한 폴더만 sandbox 내에서 security-scoped bookmark로 접근합니다. 자세한 내용은 [개인정보 처리방침](https://jiunbae.github.io/file-stack/privacy.html) 또는 [PRIVACY.md](PRIVACY.md)를 참조하세요.
+Stashbar은 데이터를 수집하지 않으며 네트워크에 접속하지 않습니다. 사용자가 직접 선택한 폴더만 sandbox 내에서 security-scoped bookmark로 접근합니다. 자세한 내용은 [개인정보 처리방침](https://jiunbae.github.io/file-stack/privacy.html) 또는 [PRIVACY.md](PRIVACY.md)를 참조하세요.
 
 ## 라이선스
 
