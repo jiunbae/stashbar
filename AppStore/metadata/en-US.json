@@ -5,9 +5,9 @@
   "promotionalText": "Pin frequently used folders to the menu bar and open the file you need faster.",
   "description": "Stashbar is a macOS menu bar utility for quickly finding and opening recent files from folders you check often.\n\nPin folders such as Screenshots, Downloads, or active project directories, then browse their latest contents from one compact popover. You can preview files with Quick Look and continue with common Finder-style actions without bringing Finder to the front first.\n\nKey Features\n- Pin multiple folders and switch between them quickly\n- Icon, list, and hierarchy views with sorting options\n- Quick Look previews and Finder-style keyboard shortcuts\n- Drag and drop, copy/paste, and move to Trash support\n- Disk cache and security bookmarks for fast access after relaunch\n- Launch at login so it is always ready in the menu bar\n\nStashbar is designed as a focused menu bar tool that makes repeated file-checking workflows shorter and more natural.",
   "keywords": "menubar,recent files,file browser,folder,productivity,utilities,Finder,screenshots,downloads",
-  "supportUrl": "https://github.com/jiunbae/file-stack/issues",
-  "marketingUrl": "https://jiun.dev/file-stack/",
-  "privacyPolicyUrl": "https://jiun.dev/file-stack/privacy.html",
+  "supportUrl": "https://github.com/jiunbae/stashbar/issues",
+  "marketingUrl": "https://jiun.dev/stashbar/",
+  "privacyPolicyUrl": "https://jiun.dev/stashbar/privacy.html",
   "primaryCategory": "Utilities",
   "reviewNotes": "This is a macOS menu bar app. It only displays folders selected by the user via NSOpenPanel, and uses App Sandbox with security-scoped bookmarks. The app does not make network requests or collect user data."
 }
