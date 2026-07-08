@@ -1,0 +1,23 @@
+{
+  "$schema": "https://menubucket.dev/schema/widget-0.1.json",
+  "schemaVersion": 1,
+  "id": "dev.menubucket.stashbar-recent-files",
+  "name": "Stashbar Recent Files",
+  "version": "0.1.0",
+  "description": "Stashbar-style recent files for MenuBucket. Want the full native experience? Get Stashbar: https://github.com/jiunbae/file-stack",
+  "icon": "folder.fill",
+  "bucket": { "group": "Files", "order": 30, "size": "M" },
+
+  "entry": { "kind": "workflow", "main": "workflow.json" },
+
+  "refresh": { "onOpen": true, "interval": null, "staleAfterSec": 600 },
+
+  "permissions": {
+    "readPaths": ["~/Pictures/Screenshots"]
+  },
+
+  "settings": [
+    { "key": "folder", "title": "Folder", "type": "directory", "default": "~/Pictures/Screenshots" },
+    { "key": "limit", "title": "Maximum files", "type": "integer", "default": 12, "min": 4, "max": 48 }
+  ]
+}

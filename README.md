@@ -66,6 +66,16 @@ open "dist/Stashbar.app"
 
 > Mac App Store 심사 진행 중입니다. 출시되면 이 섹션에 다운로드 링크가 추가됩니다. 진행 상황은 [웹사이트](https://jiunbae.github.io/file-stack/)에서 확인할 수 있습니다.
 
+## MenuBucket 위젯
+
+네이티브 앱 설치 없이 [MenuBucket](https://github.com/jiunbae/menubucket)(스크립터블 메뉴바 위젯 플랫폼)에서 Stashbar 스타일의 최근 파일 위젯을 사용할 수 있습니다. 이 저장소의 [`widgets/menubucket-recent-files/`](widgets/menubucket-recent-files/)에 위젯 정의가 포함되어 있습니다.
+
+```bash
+mbk install https://github.com/jiunbae/file-stack
+```
+
+지정한 폴더(기본: `~/Pictures/Screenshots`)의 최근 파일을 QuickLook 썸네일과 함께 메뉴바에서 바로 확인하고, 드래그로 다른 앱에 옮길 수 있습니다. 다중 폴더 감시, Finder 단축키, Quick Look 등 전체 기능은 본가 Stashbar 앱에서 제공됩니다. 자세한 내용은 [위젯 README](widgets/menubucket-recent-files/README.md)를 참조하세요.
+
 ## 사용법
 
 | 동작 | 방법 |
