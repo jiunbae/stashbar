@@ -8,111 +8,161 @@ guard CommandLine.arguments.count > 1 else {
 }
 
 let outputPath = CommandLine.arguments[1]
-let S: CGFloat = 1024
-let center = CGPoint(x: S / 2, y: S / 2)
-let corner = S * 0.2237
+let S: CGFloat = 2048
+let canvasRect = CGRect(x: 0, y: 0, width: S, height: S)
 
-func R(_ r: CGRect) -> NSRect { NSRect(x: r.origin.x, y: r.origin.y, width: r.size.width, height: r.size.height) }
-
-let bmp = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(S), pixelsHigh: Int(S), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .calibratedRGB, bitmapFormat: .alphaFirst, bytesPerRow: 0, bitsPerPixel: 0)!
-guard let gctx = NSGraphicsContext(bitmapImageRep: bmp) else { fatalError("no ctx") }
-NSGraphicsContext.saveGraphicsState()
-NSGraphicsContext.current = gctx
-let ctx = gctx.cgContext
-
-// mask
-let mask = NSBezierPath(roundedRect: R(CGRect(x: 0, y: 0, width: S, height: S)), xRadius: corner, yRadius: corner)
-mask.setClip()
-
-// bg — deep dark
-let bg = [
-    NSColor(calibratedRed: 0.13, green: 0.14, blue: 0.20, alpha: 1.0),
-    NSColor(calibratedRed: 0.07, green: 0.08, blue: 0.12, alpha: 1.0)
-]
-let bgL: [CGFloat] = [0.0, 1.0]
-NSGradient(colors: bg, atLocations: bgL, colorSpace: .deviceRGB)?.draw(in: CGRect(x: 0, y: 0, width: S, height: S), angle: -45)
-
-// ambient glow behind card
-let glow = CGRect(x: center.x - S * 0.38, y: center.y - S * 0.38, width: S * 0.76, height: S * 0.76)
-ctx.saveGState()
-ctx.setShadow(offset: .zero, blur: S * 0.18, color: NSColor(calibratedRed: 0.30, green: 0.40, blue: 0.65, alpha: 0.10).cgColor)
-let glowPath = NSBezierPath(ovalIn: R(glow))
-NSColor(calibratedRed: 0.35, green: 0.45, blue: 0.70, alpha: 0.05).setFill()
-glowPath.fill()
-ctx.restoreGState()
-
-// === Main card ===
-let cardW = S * 0.72
-let cardH = S * 0.72
-let cardR = S * 0.075
-let cardRect = CGRect(x: center.x - cardW / 2, y: center.y - cardH / 2, width: cardW, height: cardH)
-let cardPath = NSBezierPath(roundedRect: R(cardRect), xRadius: cardR, yRadius: cardR)
-
-ctx.saveGState()
-ctx.setShadow(offset: CGSize(width: 0, height: S * 0.01), blur: S * 0.06, color: NSColor(calibratedWhite: 0.0, alpha: 0.25).cgColor)
-NSColor(calibratedRed: 0.20, green: 0.22, blue: 0.28, alpha: 1.0).setFill()
-cardPath.fill()
-ctx.restoreGState()
-
-// subtle rim
-ctx.saveGState()
-cardPath.addClip()
-ctx.setShadow(offset: CGSize(width: 0, height: 0), blur: S * 0.015, color: NSColor(white: 1.0, alpha: 0.08).cgColor)
-NSColor(white: 1.0, alpha: 0.0).setStroke()
-cardPath.lineWidth = 2
-cardPath.stroke()
-ctx.restoreGState()
-
-// === Content ===
-let pad = cardW * 0.085
-let content = cardRect.insetBy(dx: pad, dy: pad)
-
-// Top title pill
-let titleH = content.height * 0.055
-let titleW = content.width * 0.32
-let titleRect = CGRect(x: content.midX - titleW / 2, y: content.maxY - titleH, width: titleW, height: titleH)
-let titlePath = NSBezierPath(roundedRect: R(titleRect), xRadius: titleH / 2, yRadius: titleH / 2)
-NSColor(calibratedWhite: 0.35, alpha: 1.0).setFill()
-titlePath.fill()
-
-// 4 rows
-let rows = 4
-let gap = content.height * 0.028
-let rowH = (content.height - titleH - gap * CGFloat(rows + 1)) / CGFloat(rows)
-
-for i in 0..<rows {
-    let isSel = (i == 2)
-    let rowY = content.minY + gap + CGFloat(rows - 1 - i) * (rowH + gap)
-    let rowW = isSel ? content.width : content.width * 0.78
-    let rowRect = CGRect(x: content.minX, y: rowY, width: rowW, height: rowH)
-    let rowPath = NSBezierPath(roundedRect: R(rowRect), xRadius: rowH / 2, yRadius: rowH / 2)
-
-    if isSel {
-        NSColor(calibratedRed: 0.35, green: 0.60, blue: 1.0, alpha: 1.0).setFill()
-    } else {
-        NSColor(calibratedRed: 0.28, green: 0.30, blue: 0.35, alpha: 1.0).setFill()
-    }
-    rowPath.fill()
-
-    if isSel {
-        let d = rowH * 0.22
-        let dot = CGRect(x: rowRect.minX + rowH * 0.32, y: rowRect.midY - d / 2, width: d, height: d)
-        let dotPath = NSBezierPath(ovalIn: R(dot))
-        NSColor.white.setFill()
-        dotPath.fill()
-    }
+func R(_ rect: CGRect) -> NSRect {
+    NSRect(x: rect.origin.x, y: rect.origin.y, width: rect.size.width, height: rect.size.height)
 }
 
-// sheen
-let sheen = NSBezierPath(roundedRect: R(cardRect), xRadius: cardR, yRadius: cardR)
-NSGradient(colors: [NSColor(white: 1.0, alpha: 0.05), NSColor(white: 1.0, alpha: 0.01), NSColor(white: 1.0, alpha: 0.0)],
-             atLocations: [0.0, 0.25, 1.0], colorSpace: .deviceRGB)?.draw(in: sheen, angle: -48)
+func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat = 1) -> NSColor {
+    NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha)
+}
 
-// outer rim
-NSColor(white: 1.0, alpha: 0.10).setStroke()
-NSBezierPath(roundedRect: R(CGRect(x: 0.5, y: 0.5, width: S - 1, height: S - 1)), xRadius: corner, yRadius: corner).stroke()
+func rounded(_ rect: CGRect, _ radius: CGFloat) -> NSBezierPath {
+    NSBezierPath(roundedRect: R(rect), xRadius: radius, yRadius: radius)
+}
+
+func fillRounded(_ rect: CGRect, radius: CGFloat, fill: NSColor) {
+    fill.setFill()
+    rounded(rect, radius).fill()
+}
+
+func drawShadowed(_ path: NSBezierPath, fill: NSColor, shadowColor: NSColor, blur: CGFloat, offset: CGSize) {
+    let shadow = NSShadow()
+    shadow.shadowColor = shadowColor
+    shadow.shadowBlurRadius = blur
+    shadow.shadowOffset = NSSize(width: offset.width, height: offset.height)
+    NSGraphicsContext.current?.saveGraphicsState()
+    shadow.set()
+    fill.setFill()
+    path.fill()
+    NSGraphicsContext.current?.restoreGraphicsState()
+}
+
+func drawTray(rect: CGRect, radius: CGFloat, notchWidth: CGFloat, notchDepth: CGFloat, fill: NSColor) {
+    let midX = rect.midX
+    let maxY = rect.maxY
+    let minY = rect.minY
+    let minX = rect.minX
+    let maxX = rect.maxX
+    let notchLeft = midX - notchWidth / 2
+    let notchRight = midX + notchWidth / 2
+
+    let path = NSBezierPath()
+    path.move(to: NSPoint(x: minX + radius, y: minY))
+    path.line(to: NSPoint(x: maxX - radius, y: minY))
+    path.curve(to: NSPoint(x: maxX, y: minY + radius),
+               controlPoint1: NSPoint(x: maxX - radius * 0.45, y: minY),
+               controlPoint2: NSPoint(x: maxX, y: minY + radius * 0.45))
+    path.line(to: NSPoint(x: maxX, y: maxY - radius))
+    path.curve(to: NSPoint(x: maxX - radius, y: maxY),
+               controlPoint1: NSPoint(x: maxX, y: maxY - radius * 0.45),
+               controlPoint2: NSPoint(x: maxX - radius * 0.45, y: maxY))
+    path.line(to: NSPoint(x: notchRight, y: maxY))
+    path.curve(to: NSPoint(x: midX, y: maxY - notchDepth),
+               controlPoint1: NSPoint(x: notchRight - notchWidth * 0.18, y: maxY),
+               controlPoint2: NSPoint(x: midX + notchWidth * 0.28, y: maxY - notchDepth))
+    path.curve(to: NSPoint(x: notchLeft, y: maxY),
+               controlPoint1: NSPoint(x: midX - notchWidth * 0.28, y: maxY - notchDepth),
+               controlPoint2: NSPoint(x: notchLeft + notchWidth * 0.18, y: maxY))
+    path.line(to: NSPoint(x: minX + radius, y: maxY))
+    path.curve(to: NSPoint(x: minX, y: maxY - radius),
+               controlPoint1: NSPoint(x: minX + radius * 0.45, y: maxY),
+               controlPoint2: NSPoint(x: minX, y: maxY - radius * 0.45))
+    path.line(to: NSPoint(x: minX, y: minY + radius))
+    path.curve(to: NSPoint(x: minX + radius, y: minY),
+               controlPoint1: NSPoint(x: minX, y: minY + radius * 0.45),
+               controlPoint2: NSPoint(x: minX + radius * 0.45, y: minY))
+    path.close()
+
+    drawShadowed(
+        path,
+        fill: fill,
+        shadowColor: NSColor.black.withAlphaComponent(0.24),
+        blur: S * 0.028,
+        offset: CGSize(width: 0, height: -S * 0.010)
+    )
+}
+
+let backgroundTop = color(0.094, 0.113, 0.129)
+let backgroundBottom = color(0.055, 0.067, 0.078)
+let tray = color(0.880, 0.890, 0.880)
+let steel = color(0.420, 0.561, 0.651) // #6B8FA6
+let steelLight = color(0.600, 0.702, 0.765)
+
+let bitmap = NSBitmapImageRep(
+    bitmapDataPlanes: nil,
+    pixelsWide: Int(S),
+    pixelsHigh: Int(S),
+    bitsPerSample: 8,
+    samplesPerPixel: 4,
+    hasAlpha: true,
+    isPlanar: false,
+    colorSpaceName: .deviceRGB,
+    bitmapFormat: [],
+    bytesPerRow: 0,
+    bitsPerPixel: 0
+)!
+guard let graphicsContext = NSGraphicsContext(bitmapImageRep: bitmap) else {
+    fatalError("no graphics context")
+}
+
+NSGraphicsContext.saveGraphicsState()
+NSGraphicsContext.current = graphicsContext
+graphicsContext.imageInterpolation = .high
+let context = graphicsContext.cgContext
+
+NSGradient(colors: [backgroundTop, backgroundBottom], atLocations: [0, 1], colorSpace: .deviceRGB)?
+    .draw(in: canvasRect, angle: -45)
+
+context.saveGState()
+context.setAlpha(0.16)
+fillRounded(
+    CGRect(x: -S * 0.08, y: S * 0.23, width: S * 1.16, height: S * 0.055),
+    radius: S * 0.028,
+    fill: steel
+)
+context.restoreGState()
+
+let fileRect = CGRect(x: S * 0.362, y: S * 0.392, width: S * 0.276, height: S * 0.392)
+drawShadowed(
+    rounded(fileRect, S * 0.030),
+    fill: steel,
+    shadowColor: NSColor.black.withAlphaComponent(0.16),
+    blur: S * 0.018,
+    offset: CGSize(width: 0, height: -S * 0.006)
+)
+
+let fold = S * 0.100
+let foldCut = NSBezierPath()
+foldCut.move(to: NSPoint(x: fileRect.maxX - fold, y: fileRect.maxY))
+foldCut.line(to: NSPoint(x: fileRect.maxX, y: fileRect.maxY))
+foldCut.line(to: NSPoint(x: fileRect.maxX, y: fileRect.maxY - fold))
+foldCut.close()
+backgroundTop.setFill()
+foldCut.fill()
+
+let foldFace = NSBezierPath()
+foldFace.move(to: NSPoint(x: fileRect.maxX - fold * 0.86, y: fileRect.maxY - S * 0.006))
+foldFace.line(to: NSPoint(x: fileRect.maxX - S * 0.006, y: fileRect.maxY - fold * 0.86))
+foldFace.line(to: NSPoint(x: fileRect.maxX - fold * 0.86, y: fileRect.maxY - fold * 0.86))
+foldFace.close()
+steelLight.setFill()
+foldFace.fill()
+
+let trayRect = CGRect(x: S * 0.245, y: S * 0.315, width: S * 0.510, height: S * 0.205)
+drawTray(
+    rect: trayRect,
+    radius: S * 0.055,
+    notchWidth: S * 0.180,
+    notchDepth: S * 0.055,
+    fill: tray
+)
 
 NSGraphicsContext.restoreGraphicsState()
 
-guard let png = bmp.representation(using: .png, properties: [:]) else { fatalError("png fail") }
+guard let png = bitmap.representation(using: .png, properties: [:]) else {
+    fatalError("png fail")
+}
 try png.write(to: URL(fileURLWithPath: outputPath))

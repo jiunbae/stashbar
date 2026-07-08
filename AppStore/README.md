@@ -10,7 +10,8 @@ swift scripts/generate_app_store_assets.swift
 
 생성 결과:
 
-- `AppStore/icons/file-stack-app-store-icon-1024.png`
+- `AppStore/icons/stashbar-app-store-icon-1024.png`
+- `AppStore/icons/file-stack-app-store-icon-1024.png` (호환 복사본)
 - `AppStore/screenshots/mac/ko-KR/*.png`
 
 실촬영 스크린샷 생성:
@@ -25,7 +26,7 @@ scripts/capture_real_screenshots.sh
 
 ## 현재 규격
 
-Apple App Store Connect 공식 도움말 기준으로, 2026-05-04 시점의 Mac 스크린샷은 다음 16:10 규격 중 하나를 사용합니다.
+Apple App Store Connect 공식 도움말 기준으로, 2026-07-08 확인 시점의 Mac 스크린샷은 다음 16:10 규격 중 하나를 사용합니다.
 
 - `1280 x 800`
 - `1440 x 900`

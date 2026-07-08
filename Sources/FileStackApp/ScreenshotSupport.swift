@@ -127,7 +127,10 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
+            let statusImage = NSImage(systemSymbolName: "tray.full.fill", accessibilityDescription: "Stashbar")
+                ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
+            statusImage?.isTemplate = true
+            button.image = statusImage
             button.appearance = NSAppearance(named: .aqua)
         }
 
@@ -345,8 +348,8 @@ private final class ScreenshotBackdropView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         // Soft, neutral gradient that complements the popover chrome without
         // competing with it for attention.
-        let topColor = NSColor(srgbRed: 0.94, green: 0.96, blue: 0.99, alpha: 1.0)
-        let bottomColor = NSColor(srgbRed: 0.74, green: 0.83, blue: 0.93, alpha: 1.0)
+        let topColor = NSColor(srgbRed: 0.96, green: 0.95, blue: 0.93, alpha: 1.0)
+        let bottomColor = NSColor(srgbRed: 0.84, green: 0.88, blue: 0.90, alpha: 1.0)
         if let gradient = NSGradient(starting: topColor, ending: bottomColor) {
             gradient.draw(in: bounds, angle: -90)
         }

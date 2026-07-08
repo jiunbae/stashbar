@@ -4,12 +4,15 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
-FIXTURE_ROOT="/Users/Shared/Stashbar"
-OUTPUT_DIR="${PROJECT_ROOT}/AppStore/screenshots-live/mac/ko-KR"
+FIXTURE_ROOT="${FILE_STACK_SCREENSHOT_FIXTURE_ROOT:-/Users/Shared/Stashbar}"
+OUTPUT_DIR="${FILE_STACK_SCREENSHOT_OUTPUT_DIR:-${PROJECT_ROOT}/AppStore/screenshots-live/mac/ko-KR}"
 EXECUTABLE_PATH="${PROJECT_ROOT}/.build/release/FileStackApp"
+CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-/private/tmp/file-stack-swift-module-cache}"
+export CLANG_MODULE_CACHE_PATH
 
 mkdir -p "${FIXTURE_ROOT}/Screenshots" "${FIXTURE_ROOT}/Downloads" "${FIXTURE_ROOT}/Workspace/Assets" "${FIXTURE_ROOT}/Workspace/Archive"
 mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${CLANG_MODULE_CACHE_PATH}"
 
 create_text_file() {
     local path="$1"

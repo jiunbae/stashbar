@@ -1,4 +1,4 @@
-Stashbar is a menu bar utility (LSUIElement) that lets users watch folders and browse recent files from the macOS menu bar.
+Stashbar is a menu bar utility (LSUIElement) that lets users browse selected folders and recent files from the macOS menu bar.
 
 SANDBOX & FOLDER ACCESS:
 - The app uses NSOpenPanel to let users explicitly select folders they want to watch. No folders are accessed without explicit user action.

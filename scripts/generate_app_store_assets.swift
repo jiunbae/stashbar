@@ -12,6 +12,7 @@ struct Palette {
 
 struct Scene {
     let filename: String
+    let screenshotFilename: String
     let badge: String
     let title: String
     let subtitle: String
@@ -23,100 +24,111 @@ struct Scene {
 }
 
 let canvasSize = NSSize(width: 2560, height: 1600)
-let screenshotCardRect = CGRect(x: 1240, y: 150, width: 1160, height: 1280)
+let screenshotCardRect = CGRect(x: 1210, y: 290, width: 1200, height: 900)
 let outputRoot = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     .appendingPathComponent("AppStore", isDirectory: true)
 let screenshotDirectory = outputRoot
     .appendingPathComponent("screenshots/mac/ko-KR", isDirectory: true)
+let liveScreenshotDirectory = outputRoot
+    .appendingPathComponent("screenshots-live/mac/ko-KR", isDirectory: true)
 let iconDirectory = outputRoot.appendingPathComponent("icons", isDirectory: true)
 
 let resourcesURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     .appendingPathComponent("Resources", isDirectory: true)
 let previewURL = resourcesURL.appendingPathComponent("preview.png")
-let iconURL = resourcesURL.appendingPathComponent("FileStackIcon.png")
+let iconCandidates = [
+    resourcesURL.appendingPathComponent("StashbarIcon.png"),
+    resourcesURL.appendingPathComponent("FileStackIcon.png")
+]
 
 guard let previewImage = NSImage(contentsOf: previewURL) else {
     fputs("error: missing Resources/preview.png\n", stderr)
     exit(1)
 }
 
-guard let iconImage = NSImage(contentsOf: iconURL) else {
-    fputs("error: missing Resources/FileStackIcon.png\n", stderr)
+guard let iconURL = iconCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }),
+      let iconImage = NSImage(contentsOf: iconURL) else {
+    fputs("error: missing Resources/StashbarIcon.png\n", stderr)
     exit(1)
 }
 
 let scenes: [Scene] = [
     Scene(
         filename: "01-menu-bar-recent-files.png",
-        badge: "MENU BAR WORKFLOW",
-        title: "메뉴바에서 최근 파일을 즉시 확인",
-        subtitle: "Finder를 열지 않고도 자주 보는 폴더의 최신 파일을 바로 탐색합니다.",
-        detail: "팝오버를 열면 최근 항목이 정리된 상태로 나타나고, 선택한 파일은 더블클릭 또는 우클릭 메뉴로 즉시 열 수 있습니다.",
-        chips: ["최근 파일", "즉시 열기", "메뉴바 런처"],
-        focusRect: CGRect(x: 0.11, y: 0.24, width: 0.30, height: 0.31),
+        screenshotFilename: "01-live-icon-grid.png",
+        badge: "MENU BAR",
+        title: "메뉴바에서 최근 파일을 바로 확인",
+        subtitle: "자주 보는 폴더를 Stashbar에 고정하고 최신 항목부터 확인합니다.",
+        detail: "Finder 창을 먼저 열 필요 없이 메뉴바 팝오버에서 파일을 찾고 즉시 열 수 있습니다.",
+        chips: ["최근 파일", "즉시 열기", "Stashbar"],
+        focusRect: CGRect(x: 0.45, y: 0.27, width: 0.34, height: 0.24),
         focusLabel: "최근 항목 선택 영역",
         palette: Palette(
-            top: NSColor(calibratedRed: 0.09, green: 0.26, blue: 0.60, alpha: 1.0),
-            bottom: NSColor(calibratedRed: 0.17, green: 0.47, blue: 0.88, alpha: 1.0),
-            accent: NSColor(calibratedRed: 0.89, green: 0.95, blue: 1.0, alpha: 1.0),
-            accentSoft: NSColor(calibratedRed: 0.84, green: 0.92, blue: 1.0, alpha: 0.25),
-            card: NSColor.white
+            top: NSColor(calibratedRed: 0.17, green: 0.20, blue: 0.23, alpha: 1.0),
+            bottom: NSColor(calibratedRed: 0.28, green: 0.38, blue: 0.45, alpha: 1.0),
+            accent: NSColor(calibratedRed: 0.84, green: 0.88, blue: 0.90, alpha: 1.0),
+            accentSoft: NSColor(calibratedRed: 0.42, green: 0.56, blue: 0.65, alpha: 0.24),
+            card: NSColor(calibratedRed: 0.99, green: 0.98, blue: 0.94, alpha: 1.0)
         )
     ),
     Scene(
         filename: "02-multi-folder-switching.png",
-        badge: "MULTI FOLDER",
-        title: "여러 폴더를 한 번에 감시",
-        subtitle: "스크린샷, 다운로드, 작업 폴더를 드롭다운으로 전환하며 연속적으로 확인합니다.",
-        detail: "보안 북마크로 접근 권한을 유지하고, 폴더별 최신 파일 목록을 실시간으로 갱신합니다.",
-        chips: ["다중 폴더", "보안 북마크", "실시간 갱신"],
-        focusRect: CGRect(x: 0.15, y: 0.10, width: 0.23, height: 0.08),
+        screenshotFilename: "02-live-folder-switching.png",
+        badge: "FOLDERS",
+        title: "여러 폴더를 한곳에 고정",
+        subtitle: "스크린샷, 다운로드, 작업 폴더를 드롭다운으로 전환합니다.",
+        detail: "보안 북마크로 권한을 유지하고 폴더별 최신 파일 목록을 빠르게 다시 불러옵니다.",
+        chips: ["다중 폴더", "보안 북마크", "빠른 전환"],
+        focusRect: CGRect(x: 0.45, y: 0.10, width: 0.18, height: 0.08),
         focusLabel: "폴더 전환 드롭다운",
         palette: Palette(
-            top: NSColor(calibratedRed: 0.08, green: 0.34, blue: 0.39, alpha: 1.0),
-            bottom: NSColor(calibratedRed: 0.12, green: 0.56, blue: 0.63, alpha: 1.0),
-            accent: NSColor(calibratedRed: 0.88, green: 1.0, blue: 0.98, alpha: 1.0),
-            accentSoft: NSColor(calibratedRed: 0.76, green: 0.98, blue: 0.95, alpha: 0.23),
-            card: NSColor.white
+            top: NSColor(calibratedRed: 0.16, green: 0.18, blue: 0.22, alpha: 1.0),
+            bottom: NSColor(calibratedRed: 0.35, green: 0.41, blue: 0.48, alpha: 1.0),
+            accent: NSColor(calibratedRed: 0.88, green: 0.82, blue: 0.70, alpha: 1.0),
+            accentSoft: NSColor(calibratedRed: 0.69, green: 0.56, blue: 0.38, alpha: 0.20),
+            card: NSColor(calibratedRed: 0.99, green: 0.98, blue: 0.94, alpha: 1.0)
         )
     ),
     Scene(
         filename: "03-view-modes-and-sorting.png",
-        badge: "VIEW MODES",
+        screenshotFilename: "03-live-list-view.png",
+        badge: "VIEWS",
         title: "보기 방식과 정렬을 빠르게 전환",
         subtitle: "아이콘, 목록, 계층 보기와 정렬 옵션을 짧은 동선 안에서 바꿉니다.",
         detail: "마우스로 탐색하든 키보드로 작업하든, 폴더 흐름을 끊지 않고 같은 자리에서 상태를 바꿀 수 있습니다.",
         chips: ["아이콘 보기", "목록 보기", "정렬 옵션"],
-        focusRect: CGRect(x: 0.50, y: 0.10, width: 0.18, height: 0.08),
+        focusRect: CGRect(x: 0.66, y: 0.10, width: 0.16, height: 0.08),
         focusLabel: "보기 모드 컨트롤",
         palette: Palette(
-            top: NSColor(calibratedRed: 0.24, green: 0.18, blue: 0.55, alpha: 1.0),
-            bottom: NSColor(calibratedRed: 0.38, green: 0.29, blue: 0.76, alpha: 1.0),
-            accent: NSColor(calibratedRed: 0.97, green: 0.93, blue: 1.0, alpha: 1.0),
-            accentSoft: NSColor(calibratedRed: 0.92, green: 0.84, blue: 1.0, alpha: 0.22),
-            card: NSColor.white
+            top: NSColor(calibratedRed: 0.12, green: 0.15, blue: 0.18, alpha: 1.0),
+            bottom: NSColor(calibratedRed: 0.25, green: 0.33, blue: 0.39, alpha: 1.0),
+            accent: NSColor(calibratedRed: 0.82, green: 0.87, blue: 0.90, alpha: 1.0),
+            accentSoft: NSColor(calibratedRed: 0.42, green: 0.56, blue: 0.65, alpha: 0.20),
+            card: NSColor(calibratedRed: 0.99, green: 0.98, blue: 0.94, alpha: 1.0)
         )
     ),
     Scene(
         filename: "04-keyboard-and-actions.png",
-        badge: "KEYBOARD FLOW",
+        screenshotFilename: "01-live-icon-grid.png",
+        badge: "ACTIONS",
         title: "Quick Look과 Finder 단축키를 그대로",
         subtitle: "Space 미리보기, 복사·붙여넣기, 휴지통 이동까지 익숙한 맥 동작을 유지합니다.",
         detail: "메뉴바 도구처럼 가볍게 열어도 실제 파일 관리 작업까지 자연스럽게 이어지는 흐름에 맞췄습니다.",
         chips: ["Quick Look", "⌘C / ⌘V", "⌘⌫"],
-        focusRect: CGRect(x: 0.09, y: 0.84, width: 0.59, height: 0.09),
-        focusLabel: "하단 액션과 크기 조절",
+        focusRect: nil,
+        focusLabel: nil,
         palette: Palette(
-            top: NSColor(calibratedRed: 0.47, green: 0.21, blue: 0.14, alpha: 1.0),
-            bottom: NSColor(calibratedRed: 0.87, green: 0.42, blue: 0.22, alpha: 1.0),
-            accent: NSColor(calibratedRed: 1.0, green: 0.95, blue: 0.90, alpha: 1.0),
-            accentSoft: NSColor(calibratedRed: 1.0, green: 0.88, blue: 0.79, alpha: 0.22),
-            card: NSColor.white
+            top: NSColor(calibratedRed: 0.23, green: 0.19, blue: 0.16, alpha: 1.0),
+            bottom: NSColor(calibratedRed: 0.50, green: 0.43, blue: 0.35, alpha: 1.0),
+            accent: NSColor(calibratedRed: 0.93, green: 0.88, blue: 0.80, alpha: 1.0),
+            accentSoft: NSColor(calibratedRed: 0.69, green: 0.56, blue: 0.38, alpha: 0.20),
+            card: NSColor(calibratedRed: 0.99, green: 0.98, blue: 0.94, alpha: 1.0)
         )
     ),
     Scene(
         filename: "05-cache-and-persistence.png",
-        badge: "PERSISTENT ACCESS",
+        screenshotFilename: "04-live-hierarchy-view.png",
+        badge: "LOCAL",
         title: "다시 열어도 빠르고 안전하게",
         subtitle: "디스크 캐시와 App Sandbox 호환 설계로 재실행 후에도 작업 흐름을 이어갑니다.",
         detail: "로그인 시 자동 실행과 영속 북마크를 활용해 자주 보는 폴더를 메뉴바에 안정적으로 고정할 수 있습니다.",
@@ -124,11 +136,11 @@ let scenes: [Scene] = [
         focusRect: nil,
         focusLabel: nil,
         palette: Palette(
-            top: NSColor(calibratedRed: 0.15, green: 0.25, blue: 0.39, alpha: 1.0),
-            bottom: NSColor(calibratedRed: 0.24, green: 0.38, blue: 0.58, alpha: 1.0),
-            accent: NSColor(calibratedRed: 0.93, green: 0.97, blue: 1.0, alpha: 1.0),
-            accentSoft: NSColor(calibratedRed: 0.82, green: 0.90, blue: 1.0, alpha: 0.18),
-            card: NSColor.white
+            top: NSColor(calibratedRed: 0.08, green: 0.10, blue: 0.12, alpha: 1.0),
+            bottom: NSColor(calibratedRed: 0.17, green: 0.20, blue: 0.23, alpha: 1.0),
+            accent: NSColor(calibratedRed: 0.84, green: 0.88, blue: 0.90, alpha: 1.0),
+            accentSoft: NSColor(calibratedRed: 0.42, green: 0.56, blue: 0.65, alpha: 0.20),
+            card: NSColor(calibratedRed: 0.99, green: 0.98, blue: 0.94, alpha: 1.0)
         )
     )
 ]
@@ -252,10 +264,13 @@ func exportAppStoreIcon() throws {
                    operation: .sourceOver,
                    fraction: 1.0)
     exportImage.unlockFocus()
+    try savePNG(exportImage, to: iconDirectory.appendingPathComponent("stashbar-app-store-icon-1024.png"), pixelSize: exportSize)
     try savePNG(exportImage, to: iconDirectory.appendingPathComponent("file-stack-app-store-icon-1024.png"), pixelSize: exportSize)
 }
 
 func renderScene(_ scene: Scene) throws {
+    let sceneScreenshotURL = liveScreenshotDirectory.appendingPathComponent(scene.screenshotFilename)
+    let sceneScreenshotImage = NSImage(contentsOf: sceneScreenshotURL) ?? previewImage
     let image = NSImage(size: canvasSize)
     image.lockFocus()
 
@@ -270,17 +285,23 @@ func renderScene(_ scene: Scene) throws {
     }
 
     context.saveGState()
-    context.setAlpha(0.95)
-    drawRoundedRect(
-        CGRect(x: -120, y: -120, width: 1180, height: 780),
-        radius: 240,
-        fill: scene.palette.accentSoft
-    )
-    drawRoundedRect(
-        CGRect(x: 1640, y: 1040, width: 760, height: 420),
-        radius: 180,
-        fill: scene.palette.accentSoft.withAlphaComponent(0.16)
-    )
+    for index in 0..<5 {
+        let rect = CGRect(
+            x: -240,
+            y: 250 + CGFloat(index) * 235,
+            width: 1720,
+            height: 72
+        )
+        context.saveGState()
+        context.translateBy(x: rect.midX, y: rect.midY)
+        context.rotate(by: -10 * .pi / 180)
+        drawRoundedRect(
+            CGRect(x: -rect.width / 2, y: -rect.height / 2, width: rect.width, height: rect.height),
+            radius: rect.height / 2,
+            fill: index == 2 ? scene.palette.accentSoft : NSColor.white.withAlphaComponent(0.08)
+        )
+        context.restoreGState()
+    }
     context.restoreGState()
 
     let smallIconRect = CGRect(x: 160, y: 1336, width: 86, height: 86)
@@ -346,16 +367,16 @@ func renderScene(_ scene: Scene) throws {
     NSGraphicsContext.current?.restoreGraphicsState()
 
     let screenshotInnerRect = screenshotCardRect.insetBy(dx: 54, dy: 54)
-    let screenshotDrawRect = aspectFitRect(for: previewImage.size, in: screenshotInnerRect)
+    let screenshotDrawRect = aspectFitRect(for: sceneScreenshotImage.size, in: screenshotInnerRect)
 
     drawRoundedRect(screenshotInnerRect, radius: 36, fill: NSColor(calibratedWhite: 0.97, alpha: 1.0))
     NSGraphicsContext.current?.saveGraphicsState()
     let clipPath = NSBezierPath(roundedRect: nsRect(screenshotInnerRect), xRadius: 36, yRadius: 36)
     clipPath.addClip()
-    previewImage.draw(in: nsRect(screenshotDrawRect),
-                      from: NSRect(origin: .zero, size: previewImage.size),
-                      operation: .sourceOver,
-                      fraction: 1.0)
+    sceneScreenshotImage.draw(in: nsRect(screenshotDrawRect),
+                              from: NSRect(origin: .zero, size: sceneScreenshotImage.size),
+                              operation: .sourceOver,
+                              fraction: 1.0)
     NSGraphicsContext.current?.restoreGraphicsState()
 
     // Re-establish focus after clipping restore.

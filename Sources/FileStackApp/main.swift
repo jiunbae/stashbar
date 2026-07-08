@@ -28,7 +28,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
+            let statusImage = NSImage(systemSymbolName: "tray.full.fill", accessibilityDescription: "Stashbar")
+                ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
+            statusImage?.isTemplate = true
+            button.image = statusImage
             button.action = #selector(statusItemClicked(_:))
             button.target = self
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])

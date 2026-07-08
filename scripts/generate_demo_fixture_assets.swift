@@ -21,24 +21,24 @@ struct DemoAsset {
 let assets: [DemoAsset] = [
     DemoAsset(
         filename: "Cover.png",
-        title: "Launch Board",
-        subtitle: "Store assets and release flow",
-        accent: NSColor(calibratedRed: 0.17, green: 0.44, blue: 0.88, alpha: 1.0),
-        secondary: NSColor(calibratedRed: 0.70, green: 0.86, blue: 1.0, alpha: 1.0)
+        title: "Stashbar Board",
+        subtitle: "Recent files and release flow",
+        accent: NSColor(calibratedRed: 0.42, green: 0.56, blue: 0.65, alpha: 1.0),
+        secondary: NSColor(calibratedRed: 0.86, green: 0.90, blue: 0.92, alpha: 1.0)
     ),
     DemoAsset(
         filename: "Card.jpg",
-        title: "Roadmap Card",
-        subtitle: "Weekly priorities",
-        accent: NSColor(calibratedRed: 0.11, green: 0.57, blue: 0.48, alpha: 1.0),
-        secondary: NSColor(calibratedRed: 0.76, green: 0.95, blue: 0.89, alpha: 1.0)
+        title: "Folder Flow",
+        subtitle: "Pinned workspace folders",
+        accent: NSColor(calibratedRed: 0.25, green: 0.33, blue: 0.39, alpha: 1.0),
+        secondary: NSColor(calibratedRed: 0.82, green: 0.86, blue: 0.89, alpha: 1.0)
     ),
     DemoAsset(
         filename: "Stats.png",
-        title: "Metrics Snapshot",
-        subtitle: "Downloads and retention",
-        accent: NSColor(calibratedRed: 0.65, green: 0.34, blue: 0.88, alpha: 1.0),
-        secondary: NSColor(calibratedRed: 0.92, green: 0.82, blue: 1.0, alpha: 1.0)
+        title: "Local Snapshot",
+        subtitle: "Everything stays on this Mac",
+        accent: NSColor(calibratedRed: 0.69, green: 0.56, blue: 0.38, alpha: 1.0),
+        secondary: NSColor(calibratedRed: 0.91, green: 0.86, blue: 0.78, alpha: 1.0)
     )
 ]
 
