@@ -125,7 +125,7 @@ fillRounded(
 )
 context.restoreGState()
 
-let fileRect = CGRect(x: S * 0.362, y: S * 0.392, width: S * 0.276, height: S * 0.392)
+let fileRect = CGRect(x: S * 0.340, y: S * 0.370, width: S * 0.320, height: S * 0.440)
 drawShadowed(
     rounded(fileRect, S * 0.030),
     fill: steel,
@@ -134,7 +134,7 @@ drawShadowed(
     offset: CGSize(width: 0, height: -S * 0.006)
 )
 
-let fold = S * 0.100
+let fold = S * 0.116
 let foldCut = NSBezierPath()
 foldCut.move(to: NSPoint(x: fileRect.maxX - fold, y: fileRect.maxY))
 foldCut.line(to: NSPoint(x: fileRect.maxX, y: fileRect.maxY))
@@ -151,12 +151,12 @@ foldFace.close()
 steelLight.setFill()
 foldFace.fill()
 
-let trayRect = CGRect(x: S * 0.245, y: S * 0.315, width: S * 0.510, height: S * 0.205)
+let trayRect = CGRect(x: S * 0.210, y: S * 0.285, width: S * 0.580, height: S * 0.235)
 drawTray(
     rect: trayRect,
-    radius: S * 0.055,
-    notchWidth: S * 0.180,
-    notchDepth: S * 0.055,
+    radius: S * 0.064,
+    notchWidth: S * 0.206,
+    notchDepth: S * 0.064,
     fill: tray
 )
 
