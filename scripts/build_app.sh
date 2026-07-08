@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+umask 022
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
@@ -173,6 +174,11 @@ if command -v xattr >/dev/null 2>&1; then
   xattr -r -d com.apple.quarantine "${APP_BUNDLE_PATH}" 2>/dev/null || true
 fi
 
+# App Store validation rejects bundles containing resources that are not
+# readable by non-root users. Generated image assets can inherit restrictive
+# local permissions, so normalize the bundle before signing.
+chmod -R u+rwX,go+rX "${APP_BUNDLE_PATH}"
+
 if command -v codesign >/dev/null 2>&1; then
   CODESIGN_ARGS=(--force --options runtime)
   if [[ -f "${ENTITLEMENTS_FILE}" ]]; then
@@ -196,6 +202,11 @@ if command -v codesign >/dev/null 2>&1; then
     codesign -d --entitlements - "${APP_BUNDLE_PATH}" 2>/dev/null | grep -q "user-selected.read-write" && echo "  ✅ user-selected.read-write entitlement embedded" || echo "  ⚠️ user-selected.read-write entitlement NOT found in signed bundle"
   fi
 fi
+
+# codesign can recreate Contents/_CodeSignature/CodeResources with restrictive
+# permissions on machines using a private umask. Normalize once more before the
+# bundle is packaged for App Store Connect.
+chmod -R u+rwX,go+rX "${APP_BUNDLE_PATH}"
 
 echo "✅ App bundle created at ${APP_BUNDLE_PATH}"
 if [[ "${SIGN_IDENTITY}" == "-" ]]; then
