@@ -22,7 +22,7 @@ scripts/capture_real_screenshots.sh
 
 생성 결과:
 
-- `AppStore/screenshots-real/mac/ko-KR/*.png`
+- `AppStore/screenshots-live/mac/ko-KR/*.png`
 
 ## 현재 규격
 
