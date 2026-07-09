@@ -244,6 +244,16 @@ func aspectFitRect(for imageSize: NSSize, in target: CGRect) -> CGRect {
     return rect
 }
 
+func croppedImage(_ image: NSImage, normalizedRect r: CGRect) -> NSImage {
+    guard let tiff = image.tiffRepresentation,
+          let bitmap = NSBitmapImageRep(data: tiff),
+          let cg = bitmap.cgImage else { return image }
+    let w = CGFloat(cg.width), h = CGFloat(cg.height)
+    let px = CGRect(x: r.minX * w, y: r.minY * h, width: r.width * w, height: r.height * h).integral
+    guard let cropped = cg.cropping(to: px) else { return image }
+    return NSImage(cgImage: cropped, size: NSSize(width: CGFloat(px.width), height: CGFloat(px.height)))
+}
+
 func normalizedTopLeftRect(_ rect: CGRect, inside drawRect: CGRect) -> CGRect {
     CGRect(
         x: drawRect.minX + rect.minX * drawRect.width,
@@ -304,19 +314,29 @@ func renderScene(_ scene: Scene) throws {
     }
     context.restoreGState()
 
-    let smallIconRect = CGRect(x: 160, y: 1336, width: 86, height: 86)
-    iconImage.draw(in: nsRect(smallIconRect),
+    // Branding: app icon + Stashbar wordmark
+    let brandIconRect = CGRect(x: 160, y: 1452, width: 100, height: 100)
+    iconImage.draw(in: nsRect(brandIconRect),
                    from: NSRect(origin: .zero, size: iconImage.size),
                    operation: .sourceOver,
                    fraction: 1.0)
+    ("Stashbar" as NSString).draw(
+        at: CGPoint(x: 282, y: 1476),
+        withAttributes: [
+            .font: NSFont.systemFont(ofSize: 58, weight: .heavy),
+            .foregroundColor: NSColor.white
+        ]
+    )
 
-    let badgeRect = CGRect(x: 270, y: 1360, width: 260, height: 44)
-    drawRoundedRect(badgeRect, radius: 22, fill: NSColor.white.withAlphaComponent(0.16))
+    // Per-scene badge as an accent pill above the headline
     let badgeAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 22, weight: .bold),
-        .foregroundColor: NSColor.white
+        .font: NSFont.systemFont(ofSize: 24, weight: .bold),
+        .foregroundColor: scene.palette.top
     ]
-    (scene.badge as NSString).draw(at: CGPoint(x: badgeRect.minX + 20, y: badgeRect.minY + 10), withAttributes: badgeAttributes)
+    let badgeTextSize = (scene.badge as NSString).size(withAttributes: badgeAttributes)
+    let badgeRect = CGRect(x: 164, y: 1336, width: badgeTextSize.width + 46, height: 54)
+    drawRoundedRect(badgeRect, radius: 27, fill: scene.palette.accent)
+    (scene.badge as NSString).draw(at: CGPoint(x: badgeRect.minX + 23, y: badgeRect.minY + 13), withAttributes: badgeAttributes)
 
     let titleHeight = drawMultilineText(
         scene.title,
@@ -356,64 +376,33 @@ func renderScene(_ scene: Scene) throws {
         lineHeight: 1.16
     )
 
-    let shadow = NSShadow()
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.18)
-    shadow.shadowBlurRadius = 28
-    shadow.shadowOffset = NSSize(width: 0, height: -20)
+    // Large real-UI product shot: crop the popover out of the 16:10 capture so
+    // the actual app is the hero of the frame instead of a tiny inset. The crop
+    // ratios track ScreenshotSupport's capture framing (popover ~80% height,
+    // centered), leaving a thin light margin that reads as a floating card.
+    let popoverCrop = croppedImage(
+        sceneScreenshotImage,
+        normalizedRect: CGRect(x: 0.265, y: 0.07, width: 0.47, height: 0.86)
+    )
+    let shotArea = CGRect(x: 1230, y: 150, width: 1190, height: 1300)
+    let shotRect = aspectFitRect(for: popoverCrop.size, in: shotArea)
 
+    let shadow = NSShadow()
+    shadow.shadowColor = NSColor.black.withAlphaComponent(0.32)
+    shadow.shadowBlurRadius = 54
+    shadow.shadowOffset = NSSize(width: 0, height: -28)
     NSGraphicsContext.current?.saveGraphicsState()
     shadow.set()
-    drawRoundedRect(screenshotCardRect, radius: 54, fill: scene.palette.card.withAlphaComponent(0.98))
+    drawRoundedRect(shotRect, radius: 40, fill: NSColor.white)
     NSGraphicsContext.current?.restoreGraphicsState()
 
-    let screenshotInnerRect = screenshotCardRect.insetBy(dx: 54, dy: 54)
-    let screenshotDrawRect = aspectFitRect(for: sceneScreenshotImage.size, in: screenshotInnerRect)
-
-    drawRoundedRect(screenshotInnerRect, radius: 36, fill: NSColor(calibratedWhite: 0.97, alpha: 1.0))
     NSGraphicsContext.current?.saveGraphicsState()
-    let clipPath = NSBezierPath(roundedRect: nsRect(screenshotInnerRect), xRadius: 36, yRadius: 36)
-    clipPath.addClip()
-    sceneScreenshotImage.draw(in: nsRect(screenshotDrawRect),
-                              from: NSRect(origin: .zero, size: sceneScreenshotImage.size),
-                              operation: .sourceOver,
-                              fraction: 1.0)
+    NSBezierPath(roundedRect: nsRect(shotRect), xRadius: 40, yRadius: 40).addClip()
+    popoverCrop.draw(in: nsRect(shotRect),
+                     from: NSRect(origin: .zero, size: popoverCrop.size),
+                     operation: .sourceOver,
+                     fraction: 1.0)
     NSGraphicsContext.current?.restoreGraphicsState()
-
-    // Re-establish focus after clipping restore.
-    let screenshotLabelRect = CGRect(x: screenshotCardRect.minX + 56, y: screenshotCardRect.maxY - 86, width: 200, height: 44)
-    drawRoundedRect(screenshotLabelRect, radius: 22, fill: scene.palette.accentSoft.withAlphaComponent(0.32))
-    let screenshotLabelAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 22, weight: .bold),
-        .foregroundColor: scene.palette.top
-    ]
-    ("LIVE UI" as NSString).draw(at: CGPoint(x: screenshotLabelRect.minX + 20, y: screenshotLabelRect.minY + 10), withAttributes: screenshotLabelAttributes)
-
-    if let focusRect = scene.focusRect {
-        let actualFocusRect = normalizedTopLeftRect(focusRect, inside: screenshotDrawRect)
-        let insetFocusRect = actualFocusRect.insetBy(dx: -10, dy: -10)
-        let focusPath = NSBezierPath(roundedRect: nsRect(insetFocusRect), xRadius: 34, yRadius: 34)
-        scene.palette.accent.withAlphaComponent(0.20).setFill()
-        focusPath.fill()
-        scene.palette.accent.setStroke()
-        focusPath.lineWidth = 8
-        focusPath.stroke()
-
-        if let focusLabel = scene.focusLabel {
-            let labelAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 20, weight: .bold),
-                .foregroundColor: scene.palette.top
-            ]
-            let labelSize = (focusLabel as NSString).size(withAttributes: labelAttributes)
-            let labelRect = CGRect(
-                x: min(max(actualFocusRect.minX, screenshotCardRect.minX + 56), screenshotCardRect.maxX - labelSize.width - 70),
-                y: min(actualFocusRect.maxY + 22, screenshotCardRect.maxY - 92),
-                width: labelSize.width + 28,
-                height: 42
-            )
-            drawRoundedRect(labelRect, radius: 21, fill: scene.palette.accent)
-            (focusLabel as NSString).draw(at: CGPoint(x: labelRect.minX + 14, y: labelRect.minY + 10), withAttributes: labelAttributes)
-        }
-    }
 
     image.unlockFocus()
 
