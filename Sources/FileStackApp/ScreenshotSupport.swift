@@ -103,6 +103,10 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private var statusItem: NSStatusItem?
     private var backdropWindows: [NSWindow] = []
+    /// Invisible view at the screen's top-center that the popover anchors to, so
+    /// the popover (and its arrow) render centered instead of under the status
+    /// item at the right edge of the menu bar.
+    private var anchorWindow: NSWindow?
 
     init(configuration: ScreenshotCaptureConfiguration) {
         self.configuration = configuration
@@ -161,9 +165,29 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let screen = button.window?.screen ?? NSScreen.main ?? NSScreen.screens.first
         controller.setInterfaceActive(true)
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        positionPopover(relativeTo: button)
+
+        // Anchor the popover to an invisible 2pt view at the screen's top-center
+        // so both the popover body and its arrow render horizontally centered.
+        if let screen {
+            let anchorRect = CGRect(x: screen.frame.midX - 1, y: screen.frame.maxY - 4, width: 2, height: 2)
+            let anchor = NSWindow(contentRect: anchorRect, styleMask: .borderless, backing: .buffered, defer: false)
+            anchor.isOpaque = false
+            anchor.backgroundColor = .clear
+            anchor.hasShadow = false
+            anchor.level = .floating
+            anchor.ignoresMouseEvents = true
+            anchor.orderFrontRegardless()
+            anchorWindow = anchor
+        }
+
+        if let anchorView = anchorWindow?.contentView {
+            popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .minY)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            positionPopover(relativeTo: button)
+        }
         popover.contentViewController?.view.window?.appearance = NSAppearance(named: .aqua)
         popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
