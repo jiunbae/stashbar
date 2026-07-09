@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "kind": "workflow",
+
+  "sources": {
+    "files": {
+      "use": "fs.directory",
+      "with": {
+        "path": "${settings.folder}",
+        "watch": true,
+        "skipHidden": true,
+        "sortBy": "modifiedAt",
+        "sortDirection": "descending",
+        "limit": "${settings.limit}"
+      }
+    }
+  },
+
+  "transforms": {
+    "visible": { "use": "assign", "from": "$.sources.files.items" }
+  },
+
+  "view": {
+    "type": "vstack",
+    "spacing": 0,
+    "children": [
+      {
+        "type": "hstack",
+        "spacing": 8,
+        "padding": 10,
+        "children": [
+          { "type": "image", "source": { "kind": "sfSymbol", "name": "folder.fill" }, "size": 15, "tint": "secondary" },
+          { "type": "text", "text": "${file.basename(settings.folder)}", "role": "title", "lineLimit": 1 },
+          { "type": "spacer" },
+          { "type": "text", "text": "${count(transforms.visible)} items", "role": "caption" }
+        ]
+      },
+      { "type": "divider" },
+      {
+        "type": "list",
+        "spacing": 2,
+        "items": {
+          "forEach": "$.transforms.visible",
+          "as": "file",
+          "template": {
+            "type": "hstack",
+            "id": "file-${file.path}",
+            "spacing": 8,
+            "padding": 6,
+            "drag": { "filePath": "${file.path}" },
+            "action": { "type": "openFile", "path": "${file.path}" },
+            "children": [
+              {
+                "type": "image",
+                "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" },
+                "size": 28
+              },
+              {
+                "type": "vstack",
+                "spacing": 2,
+                "widthFill": true,
+                "children": [
+                  { "type": "text", "text": "${file.name}", "role": "body", "lineLimit": 1 },
+                  { "type": "text", "text": "${date.relative(file.modifiedAt)}", "role": "caption", "foreground": "tertiary" }
+                ]
+              },
+              {
+                "type": "button",
+                "icon": "magnifyingglass",
+                "action": { "type": "revealFile", "path": "${file.path}" }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+
+  "empty": {
+    "type": "empty",
+    "icon": "tray",
+    "title": "No files",
+    "subtitle": "Choose another folder in widget settings."
+  },
+
+  "status": {
+    "tooltip": "Recent files: ${count(transforms.visible)} items"
+  }
+}
