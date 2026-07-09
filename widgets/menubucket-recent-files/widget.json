@@ -4,7 +4,7 @@
   "id": "dev.menubucket.stashbar-recent-files",
   "name": "Stashbar Recent Files",
   "version": "0.1.0",
-  "description": "Stashbar-style recent files for MenuBucket. Want the full native experience? Get Stashbar: https://github.com/jiunbae/file-stack",
+  "description": "Stashbar-style recent files for MenuBucket. Want the full native experience? Get Stashbar: https://github.com/jiunbae/stashbar",
   "icon": "folder.fill",
   "bucket": { "group": "Files", "order": 30, "size": "M" },
 
