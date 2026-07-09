@@ -89,6 +89,14 @@
 "button.favorite" = "Add to Favorites";
 "button.unfavorite" = "Remove from Favorites";
 
+/* MARK: - Support / Tips (SettingsView.swift, TipJar.swift) */
+"settings.section.support" = "Support Development";
+"settings.support.blurb" = "If you enjoy Stashbar, you can support its development. It's purely a tip — nothing is unlocked.";
+"settings.support.loading" = "Loading tips…";
+"settings.support.unavailable" = "Tips are unavailable right now.";
+"settings.support.thanks" = "Thank you for your support!";
+"tip.error.unverified" = "The purchase could not be verified.";
+
 /* MARK: - Status Menu (main.swift) */
 "menu.settings" = "Settings…";
 "menu.quit" = "Quit";

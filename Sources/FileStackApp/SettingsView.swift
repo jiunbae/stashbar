@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var controller: FileStackController
+    @StateObject private var tipJar = TipJar()
 
     private var viewModeBinding: Binding<FileViewMode> {
         Binding(
@@ -116,9 +117,56 @@ struct SettingsView: View {
                         Label(NSLocalizedString("button.addFolder", comment: "Add folder button"), systemImage: "plus")
                     }
                 }
+
+                Section(NSLocalizedString("settings.section.support", comment: "Support development section")) {
+                    Text(NSLocalizedString("settings.support.blurb", comment: "Support blurb"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if tipJar.products.isEmpty {
+                        HStack(spacing: 8) {
+                            if tipJar.isLoading {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text(NSLocalizedString(tipJar.isLoading ? "settings.support.loading" : "settings.support.unavailable", comment: "Tip loading state"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        ForEach(tipJar.products, id: \.id) { product in
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(product.displayName)
+                                    Text(product.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 8)
+                                Button {
+                                    Task { await tipJar.purchase(product) }
+                                } label: {
+                                    if tipJar.purchasingProductID == product.id {
+                                        ProgressView().controlSize(.small)
+                                    } else {
+                                        Text(product.displayPrice)
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(tipJar.purchasingProductID != nil)
+                            }
+                        }
+                    }
+
+                    if tipJar.thankedProductID != nil {
+                        Label(NSLocalizedString("settings.support.thanks", comment: "Thank you message"), systemImage: "heart.fill")
+                            .font(.callout)
+                            .foregroundStyle(.pink)
+                    }
+                }
             }
             .formStyle(.grouped)
             .padding(24)
+            .task { await tipJar.loadProducts() }
         }
         .frame(minWidth: 420, minHeight: 320)
         .alert(Text(NSLocalizedString("alert.error.title", comment: "Alert title")), isPresented: alertBinding) {
