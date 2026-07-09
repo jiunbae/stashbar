@@ -215,7 +215,9 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let captureRect = targetCaptureRect(for: screen, anchor: button)
+        let popoverFrame = popover.contentViewController?.view.window?.frame
+            ?? CGRect(x: screen.frame.midX - 180, y: screen.frame.maxY - 460, width: 360, height: 420)
+        let captureRect = targetCaptureRect(for: screen, popover: popoverFrame)
         let pixelRect = pixelRectForCapture(captureRect, on: screen, imageWidth: fullDisplayImage.width, imageHeight: fullDisplayImage.height)
 
         guard let cropped = fullDisplayImage.cropping(to: pixelRect) else {
@@ -232,31 +234,35 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func targetCaptureRect(for screen: NSScreen, anchor button: NSStatusBarButton) -> CGRect {
+    private func targetCaptureRect(for screen: NSScreen, popover popoverFrame: CGRect) -> CGRect {
         let screenFrame = screen.frame
-        let desiredSize = CGSize(width: 1120, height: 720)
-        // topInset = 0 captures from the very top of the screen so the menu bar
-        // and our status item icon are visible in the screenshot.
-        let topInset: CGFloat = 0
+        // Match the 2560x1600 output aspect exactly so the popover is never stretched.
+        let aspect: CGFloat = 2560.0 / 1600.0
 
-        let anchorRect: CGRect
-        if let buttonWindow = button.window {
-            let buttonBoundsInWindow = button.convert(button.bounds, to: nil)
-            anchorRect = buttonWindow.convertToScreen(buttonBoundsInWindow)
-        } else {
-            anchorRect = CGRect(x: screenFrame.midX - 20, y: screenFrame.maxY - 28, width: 40, height: 20)
+        // Frame tightly around the popover so it fills ~80% of the height and reads
+        // as the clear focal point, with symmetric gradient padding on the sides.
+        // (A portrait popover in a 16:10 landscape frame always leaves side margins;
+        // minimizing the vertical margin is what makes the important part prominent.)
+        var height = popoverFrame.height / 0.80
+        var width = height * aspect
+
+        // Guarantee a little horizontal breathing room around the popover.
+        let minWidth = popoverFrame.width + 200
+        if width < minWidth {
+            width = minWidth
+            height = width / aspect
         }
 
-        var originX = anchorRect.midX - desiredSize.width / 2
-        let maxX = screenFrame.maxX - desiredSize.width
-        originX = min(max(originX, screenFrame.minX), maxX)
+        height = min(height, screenFrame.height)
+        width = min(width, screenFrame.width)
 
-        return CGRect(
-            x: originX,
-            y: screenFrame.maxY - desiredSize.height - topInset,
-            width: desiredSize.width,
-            height: desiredSize.height
-        )
+        // Center the crop on the popover, then clamp to the screen bounds.
+        var originX = popoverFrame.midX - width / 2
+        var originY = popoverFrame.midY - height / 2
+        originX = min(max(originX, screenFrame.minX), screenFrame.maxX - width)
+        originY = min(max(originY, screenFrame.minY), screenFrame.maxY - height)
+
+        return CGRect(x: originX, y: originY, width: width, height: height)
     }
 
     private func pixelRectForCapture(_ rect: CGRect, on screen: NSScreen, imageWidth: Int, imageHeight: Int) -> CGRect {
