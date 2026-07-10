@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "workflow",
+  "_comment": "Stashbar-style recent files with three view modes (a `switch` on settings.viewMode): Preview = a hero card for the newest file plus a compact list of the rest, Grid = thumbnail tiles, List = searchable rows. Everything drags out to Finder and opens on click.",
 
   "sources": {
     "files": {
@@ -17,7 +18,13 @@
   },
 
   "transforms": {
-    "visible": { "use": "assign", "from": "$.sources.files.items" }
+    "visible": { "use": "assign", "from": "$.sources.files.items" },
+    "heroItems": { "use": "limit", "from": "$.sources.files.items", "with": { "count": 1 } },
+    "rest": {
+      "use": "filter",
+      "from": "$.sources.files.items",
+      "with": { "field": "path", "notEquals": "${sources.files.items.0.path}" }
+    }
   },
 
   "view": {
@@ -32,45 +39,137 @@
           { "type": "image", "source": { "kind": "sfSymbol", "name": "folder.fill" }, "size": 15, "tint": "secondary" },
           { "type": "text", "text": "${file.basename(settings.folder)}", "role": "title", "lineLimit": 1 },
           { "type": "spacer" },
-          { "type": "text", "text": "${count(transforms.visible)} items", "role": "caption" }
+          { "type": "text", "text": "${count(transforms.visible)} items", "role": "caption", "foreground": "secondary" }
         ]
       },
       { "type": "divider" },
       {
-        "type": "list",
-        "spacing": 2,
-        "items": {
-          "forEach": "$.transforms.visible",
-          "as": "file",
-          "template": {
-            "type": "hstack",
-            "id": "file-${file.path}",
-            "spacing": 8,
-            "padding": 6,
-            "drag": { "filePath": "${file.path}" },
-            "action": { "type": "openFile", "path": "${file.path}" },
-            "children": [
-              {
-                "type": "image",
-                "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" },
-                "size": 28
-              },
-              {
+        "switch": "${settings.viewMode}",
+        "cases": {
+          "Grid": {
+            "type": "grid",
+            "spacing": 10,
+            "padding": 10,
+            "size": "${add(settings.thumbSize, 22)}",
+            "items": {
+              "forEach": "$.transforms.visible",
+              "as": "file",
+              "template": {
                 "type": "vstack",
-                "spacing": 2,
-                "widthFill": true,
+                "spacing": 4,
+                "id": "tile-${file.path}",
+                "drag": { "filePath": "${file.path}" },
+                "action": { "type": "openFile", "path": "${file.path}" },
                 "children": [
-                  { "type": "text", "text": "${file.name}", "role": "body", "lineLimit": 1 },
-                  { "type": "text", "text": "${date.relative(file.modifiedAt)}", "role": "caption", "foreground": "tertiary" }
+                  { "type": "image", "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" }, "size": "${settings.thumbSize}" },
+                  { "type": "text", "text": "${file.name}", "role": "caption", "lineLimit": 1 }
                 ]
-              },
-              {
-                "type": "button",
-                "icon": "magnifyingglass",
-                "action": { "type": "revealFile", "path": "${file.path}" }
               }
-            ]
+            }
+          },
+          "List": {
+            "type": "list",
+            "spacing": 2,
+            "padding": 6,
+            "searchPlaceholder": "Search files",
+            "items": {
+              "forEach": "$.transforms.visible",
+              "as": "file",
+              "template": {
+                "type": "hstack",
+                "id": "row-${file.path}",
+                "spacing": 8,
+                "padding": 6,
+                "drag": { "filePath": "${file.path}" },
+                "action": { "type": "openFile", "path": "${file.path}" },
+                "children": [
+                  { "type": "image", "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" }, "size": "${settings.thumbSize}" },
+                  {
+                    "type": "vstack",
+                    "spacing": 2,
+                    "widthFill": true,
+                    "children": [
+                      { "type": "text", "text": "${file.name}", "role": "body", "lineLimit": 1 },
+                      { "type": "text", "text": "${date.relative(file.modifiedAt)}", "role": "caption", "foreground": "tertiary" }
+                    ]
+                  },
+                  {
+                    "type": "button",
+                    "icon": "magnifyingglass",
+                    "action": { "type": "revealFile", "path": "${file.path}" }
+                  }
+                ]
+              }
+            }
           }
+        },
+        "default": {
+          "type": "vstack",
+          "spacing": 0,
+          "children": [
+            {
+              "type": "list",
+              "spacing": 0,
+              "padding": 10,
+              "items": {
+                "forEach": "$.transforms.heroItems",
+                "as": "file",
+                "template": {
+                  "type": "vstack",
+                  "id": "hero-${file.path}",
+                  "spacing": 8,
+                  "drag": { "filePath": "${file.path}" },
+                  "action": { "type": "openFile", "path": "${file.path}" },
+                  "children": [
+                    { "type": "image", "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" }, "size": 148 },
+                    {
+                      "type": "hstack",
+                      "spacing": 8,
+                      "children": [
+                        {
+                          "type": "vstack",
+                          "spacing": 2,
+                          "widthFill": true,
+                          "children": [
+                            { "type": "text", "text": "${file.name}", "role": "body", "lineLimit": 1 },
+                            { "type": "text", "text": "${date.relative(file.modifiedAt)}", "role": "caption", "foreground": "tertiary" }
+                          ]
+                        },
+                        {
+                          "type": "button",
+                          "icon": "magnifyingglass",
+                          "action": { "type": "revealFile", "path": "${file.path}" }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            { "type": "divider" },
+            {
+              "type": "list",
+              "spacing": 2,
+              "padding": 6,
+              "items": {
+                "forEach": "$.transforms.rest",
+                "as": "file",
+                "template": {
+                  "type": "hstack",
+                  "id": "rest-${file.path}",
+                  "spacing": 8,
+                  "padding": 4,
+                  "drag": { "filePath": "${file.path}" },
+                  "action": { "type": "openFile", "path": "${file.path}" },
+                  "children": [
+                    { "type": "image", "source": { "kind": "fileThumbnail", "path": "${file.path}", "modifiedAt": "${file.modifiedAt}" }, "size": 28 },
+                    { "type": "text", "text": "${file.name}", "role": "body", "lineLimit": 1, "widthFill": true },
+                    { "type": "text", "text": "${date.relative(file.modifiedAt)}", "role": "caption", "foreground": "tertiary" }
+                  ]
+                }
+              }
+            }
+          ]
         }
       }
     ]
