@@ -21,9 +21,5 @@
     { "key": "viewMode", "title": "View", "type": "enum", "options": ["Preview", "Grid", "List"], "default": "Preview" },
     { "key": "limit", "title": "Maximum files", "type": "integer", "default": 18, "min": 4, "max": 48 },
     { "key": "thumbSize", "title": "Thumbnail size", "type": "integer", "default": 52, "min": 28, "max": 96 }
-  ],
-
-  "appearance": {
-    "fixedHeight": 320
-  }
+  ]
 }
