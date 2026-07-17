@@ -13,29 +13,35 @@
 <style>
   :root {
     color-scheme: light dark;
-    --bg: #fafafa;
+    --bg: #f6f8f8;
     --bg-elevated: #ffffff;
-    --fg: #1a1a1a;
-    --fg-soft: #4a4a4a;
-    --muted: #7a7a7a;
-    --accent: #6b8fa6;
-    --accent-soft: rgba(107, 143, 166, 0.14);
-    --border: #e5e5e5;
-    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
-    --hero-gradient: linear-gradient(180deg, #f6f5f1 0%, #e4e8ea 100%);
+    --fg: #17252d;
+    --fg-soft: #40535d;
+    --muted: #71818a;
+    --accent: #557f94;
+    --accent-strong: #31586c;
+    --accent-soft: rgba(85, 127, 148, 0.13);
+    --signal: #d5a65f;
+    --on-accent: #ffffff;
+    --border: #dce4e6;
+    --shadow: 0 2px 3px rgba(23,37,45,0.04), 0 18px 48px rgba(23,37,45,0.09);
+    --hero-gradient: radial-gradient(circle at 50% -18%, rgba(124,169,188,0.25), transparent 46%), linear-gradient(180deg, #f9fbfa 0%, #e6eef0 100%);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b0b0d;
-      --bg-elevated: #16161a;
-      --fg: #f0f0f3;
-      --fg-soft: #c4c4ca;
-      --muted: #8a8a90;
-      --accent: #8fa8ba;
-      --accent-soft: rgba(143, 168, 186, 0.16);
-      --border: #26262b;
-      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px rgba(0,0,0,0.4);
-      --hero-gradient: linear-gradient(180deg, #1f272d 0%, #0b0d10 100%);
+      --bg: #10191e;
+      --bg-elevated: #17242b;
+      --fg: #edf3f4;
+      --fg-soft: #bdcbd0;
+      --muted: #82949c;
+      --accent: #8aafbf;
+      --accent-strong: #b6d0da;
+      --accent-soft: rgba(138, 175, 191, 0.15);
+      --signal: #dfb875;
+      --on-accent: #102029;
+      --border: #2b3a42;
+      --shadow: 0 2px 3px rgba(0,0,0,0.32), 0 22px 56px rgba(0,0,0,0.38);
+      --hero-gradient: radial-gradient(circle at 50% -18%, rgba(91,137,157,0.25), transparent 44%), linear-gradient(180deg, #20333d 0%, #10191e 100%);
     }
   }
   * { box-sizing: border-box; }
@@ -49,6 +55,11 @@
   }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
+  a:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent) 48%, transparent);
+    outline-offset: 4px;
+    border-radius: 6px;
+  }
 
   /* Nav */
   nav {
@@ -71,16 +82,19 @@
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     color: var(--fg);
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 720;
+    font-size: 1rem;
+    letter-spacing: -0.025em;
   }
   .brand:hover { text-decoration: none; }
-  .brand img {
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    box-shadow: 0 2px 5px rgba(23,37,45,0.13);
   }
   .nav-links {
     display: flex;
@@ -106,14 +120,15 @@
   .hero img.app-icon {
     width: 112px;
     height: 112px;
-    border-radius: 24px;
-    box-shadow: var(--shadow);
+    border-radius: 25px;
+    filter: drop-shadow(0 18px 26px rgba(23,37,45,0.16));
     margin-bottom: 24px;
   }
   .hero h1 {
+    font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: clamp(2.2rem, 5vw, 3.4rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
+    font-weight: 760;
+    letter-spacing: -0.045em;
     line-height: 1.1;
     margin: 0 0 16px;
   }
@@ -143,8 +158,8 @@
   }
   .cta:hover { text-decoration: none; transform: translateY(-1px); }
   .cta.primary {
-    background: var(--fg);
-    color: var(--bg);
+    background: var(--accent-strong);
+    color: var(--on-accent);
   }
   .cta.primary:hover {
     box-shadow: 0 8px 24px color-mix(in srgb, var(--fg) 20%, transparent);
@@ -230,7 +245,15 @@
     color: var(--accent);
     border-radius: 10px;
     margin-bottom: 16px;
-    font-size: 1.2rem;
+  }
+  .feature .icon svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .feature h3 {
     font-size: 1.05rem;
@@ -293,9 +316,18 @@
     margin: 0 0 24px;
   }
   .privacy .lock {
-    font-size: 2.4rem;
     margin-bottom: 16px;
     display: inline-block;
+    color: var(--accent);
+  }
+  .privacy .lock svg {
+    width: 38px;
+    height: 38px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Footer */
@@ -319,6 +351,15 @@
     .hero img.app-icon { width: 88px; height: 88px; border-radius: 20px; }
     section { padding: 64px 20px; }
     .screenshots { grid-template-columns: 1fr; }
+    .nav-inner { padding-inline: 18px; }
+    .nav-links { gap: 16px; }
+    .nav-links a:nth-child(-n+2) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 </style>
 </head>
@@ -327,7 +368,7 @@
 <nav>
   <div class="nav-inner">
     <a class="brand" href="./">
-      <img src="assets/icon.png" alt="">
+      <img class="brand-mark" src="assets/brand-mark.svg" alt="">
       Stashbar
     </a>
     <div class="nav-links">
@@ -347,12 +388,11 @@
       자주 보는 폴더를 메뉴바에 고정하고, 최근 파일을 한눈에 — Finder를 앞에 두지 않아도 됩니다.
     </p>
     <div class="cta-row">
-      <a class="cta primary" href="https://github.com/jiunbae/stashbar" aria-label="GitHub에서 보기">
-        <span>GitHub에서 보기</span>
+      <a class="cta primary" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">
+        <span>Mac App Store에서 받기</span>
       </a>
-      <a class="cta secondary" href="#features">
-        <span>Mac App Store</span>
-        <span class="badge">곧 출시</span>
+      <a class="cta secondary" href="https://github.com/jiunbae/stashbar" aria-label="GitHub에서 보기">
+        <span>GitHub에서 보기</span>
       </a>
     </div>
     <div class="hero-screenshot">
@@ -369,42 +409,42 @@
   </div>
   <div class="features">
     <div class="feature">
-      <div class="icon">📁</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h7l2 2H21v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h4"/></svg></div>
       <h3>여러 폴더 동시 감시</h3>
       <p>스크린샷, 다운로드, 작업 폴더처럼 자주 여는 위치를 추가하면 실시간으로 변경사항이 반영됩니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">🎨</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/></svg></div>
       <h3>3가지 보기 모드</h3>
       <p>아이콘, 목록, 계층 보기 — 상황에 맞게 전환하고 슬라이더로 미리보기 크기를 조절합니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">👁</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></div>
       <h3>Quick Look 미리보기</h3>
       <p><kbd>Space</kbd> 키로 선택한 파일을 즉시 미리보기 — 선택을 바꾸면 자동으로 갱신됩니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">⌨️</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M7 16h10"/></svg></div>
       <h3>Finder 단축키 그대로</h3>
       <p>복사(<kbd>⌘C</kbd>), 잘라내기(<kbd>⌘X</kbd>), 붙여넣기(<kbd>⌘V</kbd>), 휴지통(<kbd>⌘⌫</kbd>) — 익숙한 그대로.</p>
     </div>
     <div class="feature">
-      <div class="icon">🔁</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 7h10a3 3 0 0 1 3 3v1"/><path d="m18 4 3 3-3 3M16 17H6a3 3 0 0 1-3-3v-1"/><path d="m6 20-3-3 3-3"/></svg></div>
       <h3>드래그 앤 드롭</h3>
       <p>메뉴바 팝오버에서 다른 앱이나 Finder 창으로 파일을 바로 드래그할 수 있습니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">⚡</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13h6l-.5 8.5L19 11h-6Z"/></svg></div>
       <h3>디스크 썸네일 캐시</h3>
       <p>썸네일이 디스크에 저장되어 앱을 재실행해도 즉시 표시됩니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">🚀</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20V5M7 10l5-5 5 5"/><path d="M5 16v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg></div>
       <h3>로그인 시 자동 실행</h3>
       <p>모던 <code>SMAppService</code> 기반 — 부팅 후 항상 메뉴바에서 대기합니다.</p>
     </div>
     <div class="feature">
-      <div class="icon">🔒</div>
+      <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></div>
       <h3>App Sandbox 호환</h3>
       <p>Security-scoped bookmark로 사용자가 선택한 폴더 접근만 안전하게 영속화합니다.</p>
     </div>
@@ -439,7 +479,7 @@
 
 <section class="privacy">
   <div class="privacy-inner">
-    <div class="lock">🔒</div>
+    <div class="lock" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="8" y="21" width="32" height="22" rx="5"/><path d="M15 21v-7a9 9 0 0 1 18 0v7M24 29v6"/></svg></div>
     <h2>설계부터 프라이버시 우선</h2>
     <p>
       Stashbar은 데이터를 수집하지 않습니다. 네트워크 연결도 없습니다.

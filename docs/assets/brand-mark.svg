@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Stashbar</title>
+  <style>
+    .tile { fill: #fff; }
+    .paper { fill: #edf2f2; }
+    .photo { fill: #6e9bad; }
+    .mountain { fill: #355f70; }
+    .document-line { fill: #557f91; }
+    .tray { fill: #17252d; }
+    @media (prefers-color-scheme: dark) {
+      .paper { fill: #dce6e8; }
+      .photo { fill: #83adbd; }
+      .mountain { fill: #456f80; }
+      .document-line { fill: #456f80; }
+      .tray { fill: #e5edef; }
+    }
+  </style>
+  <rect class="tile" width="64" height="64"/>
+  <g transform="rotate(-6 25 29)">
+    <rect class="paper" x="11" y="10" width="29" height="36" rx="5"/>
+    <rect class="photo" x="14" y="13" width="23" height="29" rx="3"/>
+    <circle cx="20" cy="20" r="2.5" fill="#d9aa61"/>
+    <path class="mountain" d="m14 37 7-9 5 5 5-8 6 8v9H14Z"/>
+  </g>
+  <path class="paper" d="M30 8h15l8 8v30a5 5 0 0 1-5 5H30a5 5 0 0 1-5-5V13a5 5 0 0 1 5-5Z"/>
+  <path fill="#b3c9d1" d="M45 8v8h8Z"/>
+  <rect class="document-line" x="31" y="24" width="14" height="3" rx="1.5"/>
+  <rect class="document-line" x="31" y="31" width="17" height="2" rx="1" opacity=".65"/>
+  <rect class="document-line" x="31" y="37" width="14" height="2" rx="1" opacity=".45"/>
+  <path class="tray" d="M8 34h14c2.6 0 3.4 7 10 7s7.4-7 10-7h14a5 5 0 0 1 5 5v13a7 7 0 0 1-7 7H10a7 7 0 0 1-7-7V39a5 5 0 0 1 5-5Z"/>
+</svg>
