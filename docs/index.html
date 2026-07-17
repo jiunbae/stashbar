@@ -9,7 +9,12 @@
 <meta property="og:description" content="자주 보는 폴더의 최근 파일을 메뉴바에서 한눈에. macOS 전용 생산성 유틸리티.">
 <meta property="og:image" content="assets/screenshots/01-icon-grid.png">
 <meta property="og:type" content="website">
+<link rel="canonical" href="https://jiun.dev/stashbar/">
+<link rel="alternate" hreflang="ko" href="https://jiun.dev/stashbar/?lang=ko">
+<link rel="alternate" hreflang="en" href="https://jiun.dev/stashbar/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://jiun.dev/stashbar/">
 <link rel="icon" href="assets/icon.png">
+<script src="assets/i18n.js" defer></script>
 <style>
   :root {
     color-scheme: light dark;
@@ -108,7 +113,31 @@
   .nav-actions {
     display: flex;
     align-items: center;
-    gap: 22px;
+    gap: 14px;
+  }
+  .language-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .language-switch a {
+    min-width: 30px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .language-switch a:hover { text-decoration: none; color: var(--fg); }
+  .language-switch a[aria-current="page"] {
+    background: var(--accent-strong);
+    color: var(--on-accent);
   }
   .nav-store {
     display: inline-flex;
@@ -234,6 +263,17 @@
     margin: 0 0 22px;
     text-wrap: balance;
   }
+  .headline-line {
+    display: block;
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+  html[lang="ko"] .hero h1 {
+    font-size: clamp(2.45rem, 4.1vw, 3.85rem);
+  }
+  html[lang="en"] .hero h1 {
+    font-size: clamp(2.35rem, 3.8vw, 3.55rem);
+  }
   .hero .tagline {
     font-size: clamp(1.03rem, 1.65vw, 1.2rem);
     color: var(--fg-soft);
@@ -259,6 +299,12 @@
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
   .cta:hover { text-decoration: none; transform: translateY(-1px); }
+  .cta svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex: 0 0 auto;
+  }
   .cta.primary {
     background: var(--accent-strong);
     color: var(--on-accent);
@@ -479,7 +525,8 @@
     .hero-shot-secondary { display: none; }
     .hero img.app-icon { width: 46px; height: 46px; border-radius: 12px; }
     .hero-identity { margin-bottom: 19px; }
-    .hero h1 { font-size: clamp(2.45rem, 12vw, 3.5rem); }
+    html[lang="ko"] .hero h1 { font-size: clamp(2.25rem, 10.4vw, 3.3rem); }
+    html[lang="en"] .hero h1 { font-size: clamp(2rem, 9.2vw, 3rem); }
     .hero .tagline { margin-bottom: 24px; }
     .cta-row { margin-bottom: 22px; }
     .cta { justify-content: center; }
@@ -489,7 +536,8 @@
     .screenshot img { border-radius: 15px; }
     .nav-inner { padding-inline: 18px; }
     .nav-links { display: none; }
-    .nav-actions { gap: 0; }
+    .nav-actions { gap: 8px; }
+    .language-switch a { min-width: 28px; padding-inline: 7px; }
     .nav-store { padding-inline: 13px; }
   }
   @media (min-width: 641px) and (max-width: 940px) {
@@ -522,12 +570,16 @@
     </a>
     <div class="nav-actions">
       <div class="nav-links">
-        <a href="#screenshots">스크린샷</a>
-        <a href="#features">기능</a>
-        <a href="privacy.html">개인정보</a>
+        <a href="#screenshots" data-i18n="navScreens">스크린샷</a>
+        <a href="#features" data-i18n="navFeatures">기능</a>
+        <a href="privacy.html" data-language-href="privacy.html" data-i18n="navPrivacy">개인정보</a>
         <a href="https://github.com/jiunbae/stashbar">GitHub</a>
       </div>
-      <a class="nav-store" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">App Store</a>
+      <div class="language-switch" aria-label="언어 선택" data-i18n-aria="languageLabel">
+        <a href="?lang=ko" data-language="ko">KO</a>
+        <a href="?lang=en" data-language="en">EN</a>
+      </div>
+      <a class="nav-store" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기" data-i18n-aria="storeAria">App Store</a>
     </div>
   </div>
 </nav>
@@ -539,31 +591,32 @@
         <img class="app-icon" src="assets/icon.png" alt="">
         <div>
           <div class="hero-product-name">Stashbar</div>
-          <span class="hero-kicker">macOS menu bar utility</span>
+          <span class="hero-kicker" data-i18n="heroKicker">macOS menu bar utility</span>
         </div>
       </div>
-      <h1>최근 파일은<br>Finder보다 가까이.</h1>
-      <p class="tagline">
+      <h1 data-i18n-html="heroTitle"><span class="headline-line">최근 파일은</span><span class="headline-line">Finder보다 가까이.</span></h1>
+      <p class="tagline" data-i18n="heroTagline">
         자주 보는 폴더를 메뉴바에 고정하세요. 최신 파일을 확인하고, 미리 보고, 필요한 작업까지 한곳에서 이어갑니다.
       </p>
       <div class="cta-row">
-        <a class="cta primary" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">
-          <span>Mac App Store에서 받기</span>
+        <a class="cta primary" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기" data-i18n-aria="storeAria">
+          <span data-i18n="storeCTA">Mac App Store에서 받기</span>
         </a>
-        <a class="cta secondary" href="#screenshots">
-          <span>스크린샷 더 보기</span>
+        <a class="cta secondary" href="https://github.com/jiunbae/stashbar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17 4.7 18 5 18 5c.6 1.6.2 2.8.1 3.1.7.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6a11.5 11.5 0 0 0 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+          <span data-i18n="githubCTA">GitHub 바로가기</span>
         </a>
       </div>
-      <div class="hero-facts" aria-label="Stashbar 주요 정보">
-        <span>무료</span>
-        <span>메뉴바 전용</span>
-        <span>데이터 수집 없음</span>
+      <div class="hero-facts" aria-label="Stashbar 주요 정보" data-i18n-aria="factsAria">
+        <span data-i18n="factFree">무료</span>
+        <span data-i18n="factMenuBar">메뉴바 전용</span>
+        <span data-i18n="factNoData">데이터 수집 없음</span>
       </div>
     </div>
     <div class="hero-preview">
       <div class="hero-preview-stage">
         <img class="hero-shot hero-shot-secondary hero-shot-left" src="assets/screenshots/02-folder-switching.png" alt="" width="1080" height="1260" aria-hidden="true">
-        <img class="hero-shot hero-shot-primary" src="assets/screenshots/01-icon-grid.png" alt="Stashbar에서 Screenshots 폴더의 최근 파일을 아이콘 보기로 표시한 메뉴바 팝오버" width="1080" height="1260" fetchpriority="high">
+        <img class="hero-shot hero-shot-primary" src="assets/screenshots/01-icon-grid.png" alt="Stashbar에서 Screenshots 폴더의 최근 파일을 아이콘 보기로 표시한 메뉴바 팝오버" data-i18n-alt="heroAlt" width="1080" height="1260" fetchpriority="high">
         <img class="hero-shot hero-shot-secondary hero-shot-right" src="assets/screenshots/03-list-view.png" alt="" width="1080" height="1260" aria-hidden="true">
       </div>
     </div>
@@ -572,76 +625,76 @@
 
 <section id="screenshots">
   <div class="section-header">
-    <div class="eyebrow">화면 보기</div>
-    <h2>폴더마다 편한 방식으로</h2>
-    <p>아이콘, 목록, 계층 보기를 전환하고 여러 폴더를 같은 자리에서 확인하세요.</p>
+    <div class="eyebrow" data-i18n="screensEyebrow">화면 보기</div>
+    <h2 data-i18n="screensTitle">폴더마다 편한 방식으로</h2>
+    <p data-i18n="screensDescription">아이콘, 목록, 계층 보기를 전환하고 여러 폴더를 같은 자리에서 확인하세요.</p>
   </div>
   <div class="screenshots">
     <figure class="screenshot">
-      <div class="screenshot-visual"><img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
-      <figcaption>아이콘 보기 — 썸네일로 한눈에 파악</figcaption>
+      <div class="screenshot-visual"><img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기" data-i18n-alt="shot1Alt" width="1080" height="1260" loading="lazy" decoding="async"></div>
+      <figcaption data-i18n="shot1Caption">아이콘 보기 — 썸네일로 한눈에 파악</figcaption>
     </figure>
     <figure class="screenshot">
-      <div class="screenshot-visual"><img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환" width="1080" height="1260" loading="lazy" decoding="async"></div>
-      <figcaption>다중 폴더 — 드롭다운으로 즉시 전환</figcaption>
+      <div class="screenshot-visual"><img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환" data-i18n-alt="shot2Alt" width="1080" height="1260" loading="lazy" decoding="async"></div>
+      <figcaption data-i18n="shot2Caption">다중 폴더 — 드롭다운으로 즉시 전환</figcaption>
     </figure>
     <figure class="screenshot">
-      <div class="screenshot-visual"><img src="assets/screenshots/03-list-view.png" alt="목록 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
-      <figcaption>목록 보기 — 정렬과 메타데이터 한눈에</figcaption>
+      <div class="screenshot-visual"><img src="assets/screenshots/03-list-view.png" alt="목록 보기" data-i18n-alt="shot3Alt" width="1080" height="1260" loading="lazy" decoding="async"></div>
+      <figcaption data-i18n="shot3Caption">목록 보기 — 정렬과 메타데이터 한눈에</figcaption>
     </figure>
     <figure class="screenshot">
-      <div class="screenshot-visual"><img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
-      <figcaption>계층 보기 — 하위 폴더까지 펼쳐서</figcaption>
+      <div class="screenshot-visual"><img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기" data-i18n-alt="shot4Alt" width="1080" height="1260" loading="lazy" decoding="async"></div>
+      <figcaption data-i18n="shot4Caption">계층 보기 — 하위 폴더까지 펼쳐서</figcaption>
     </figure>
   </div>
 </section>
 
 <section id="features">
   <div class="section-header">
-    <div class="eyebrow">기능</div>
-    <h2>꼭 필요한 것만, 잘 만들어진</h2>
-    <p>반복적으로 파일을 열고 확인하는 흐름을 더 짧고 자연스럽게 만드는 데 집중했습니다.</p>
+    <div class="eyebrow" data-i18n="featuresEyebrow">기능</div>
+    <h2 data-i18n="featuresTitle">꼭 필요한 것만, 잘 만들어진</h2>
+    <p data-i18n="featuresDescription">반복적으로 파일을 열고 확인하는 흐름을 더 짧고 자연스럽게 만드는 데 집중했습니다.</p>
   </div>
   <div class="features">
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5h7l2 2H21v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h4"/></svg></div>
-      <h3>여러 폴더 동시 감시</h3>
-      <p>스크린샷, 다운로드, 작업 폴더처럼 자주 여는 위치를 추가하면 실시간으로 변경사항이 반영됩니다.</p>
+      <h3 data-i18n="feature1Title">여러 폴더 동시 감시</h3>
+      <p data-i18n="feature1Body">스크린샷, 다운로드, 작업 폴더처럼 자주 여는 위치를 추가하면 실시간으로 변경사항이 반영됩니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/></svg></div>
-      <h3>3가지 보기 모드</h3>
-      <p>아이콘, 목록, 계층 보기 — 상황에 맞게 전환하고 슬라이더로 미리보기 크기를 조절합니다.</p>
+      <h3 data-i18n="feature2Title">3가지 보기 모드</h3>
+      <p data-i18n="feature2Body">아이콘, 목록, 계층 보기 — 상황에 맞게 전환하고 슬라이더로 미리보기 크기를 조절합니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></div>
-      <h3>Quick Look 미리보기</h3>
-      <p><kbd>Space</kbd> 키로 선택한 파일을 즉시 미리보기 — 선택을 바꾸면 자동으로 갱신됩니다.</p>
+      <h3 data-i18n="feature3Title">Quick Look 미리보기</h3>
+      <p data-i18n-html="feature3Body"><kbd>Space</kbd> 키로 선택한 파일을 즉시 미리보기 — 선택을 바꾸면 자동으로 갱신됩니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M7 16h10"/></svg></div>
-      <h3>Finder 단축키 그대로</h3>
-      <p>복사(<kbd>⌘C</kbd>), 잘라내기(<kbd>⌘X</kbd>), 붙여넣기(<kbd>⌘V</kbd>), 휴지통(<kbd>⌘⌫</kbd>) — 익숙한 그대로.</p>
+      <h3 data-i18n="feature4Title">Finder 단축키 그대로</h3>
+      <p data-i18n-html="feature4Body">복사(<kbd>⌘C</kbd>), 잘라내기(<kbd>⌘X</kbd>), 붙여넣기(<kbd>⌘V</kbd>), 휴지통(<kbd>⌘⌫</kbd>) — 익숙한 그대로.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 7h10a3 3 0 0 1 3 3v1"/><path d="m18 4 3 3-3 3M16 17H6a3 3 0 0 1-3-3v-1"/><path d="m6 20-3-3 3-3"/></svg></div>
-      <h3>드래그 앤 드롭</h3>
-      <p>메뉴바 팝오버에서 다른 앱이나 Finder 창으로 파일을 바로 드래그할 수 있습니다.</p>
+      <h3 data-i18n="feature5Title">드래그 앤 드롭</h3>
+      <p data-i18n="feature5Body">메뉴바 팝오버에서 다른 앱이나 Finder 창으로 파일을 바로 드래그할 수 있습니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13h6l-.5 8.5L19 11h-6Z"/></svg></div>
-      <h3>디스크 썸네일 캐시</h3>
-      <p>썸네일이 디스크에 저장되어 앱을 재실행해도 즉시 표시됩니다.</p>
+      <h3 data-i18n="feature6Title">디스크 썸네일 캐시</h3>
+      <p data-i18n="feature6Body">썸네일이 디스크에 저장되어 앱을 재실행해도 즉시 표시됩니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20V5M7 10l5-5 5 5"/><path d="M5 16v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg></div>
-      <h3>로그인 시 자동 실행</h3>
-      <p>모던 <code>SMAppService</code> 기반 — 부팅 후 항상 메뉴바에서 대기합니다.</p>
+      <h3 data-i18n="feature7Title">로그인 시 자동 실행</h3>
+      <p data-i18n-html="feature7Body">모던 <code>SMAppService</code> 기반 — 부팅 후 항상 메뉴바에서 대기합니다.</p>
     </div>
     <div class="feature">
       <div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></div>
-      <h3>App Sandbox 호환</h3>
-      <p>Security-scoped bookmark로 사용자가 선택한 폴더 접근만 안전하게 영속화합니다.</p>
+      <h3 data-i18n="feature8Title">App Sandbox 호환</h3>
+      <p data-i18n="feature8Body">Security-scoped bookmark로 사용자가 선택한 폴더 접근만 안전하게 영속화합니다.</p>
     </div>
   </div>
 </section>
@@ -649,19 +702,19 @@
 <section class="privacy">
   <div class="privacy-inner">
     <div class="lock" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="8" y="21" width="32" height="22" rx="5"/><path d="M15 21v-7a9 9 0 0 1 18 0v7M24 29v6"/></svg></div>
-    <h2>설계부터 프라이버시 우선</h2>
-    <p>
+    <h2 data-i18n="privacyTitle">설계부터 프라이버시 우선</h2>
+    <p data-i18n="privacyBody">
       Stashbar은 데이터를 수집하지 않습니다. 네트워크 연결도 없습니다.
       여러분이 선택한 폴더만, 여러분의 Mac 안에서만 동작합니다.
     </p>
-    <a class="cta secondary" href="privacy.html">개인정보 처리방침 보기 →</a>
+    <a class="cta secondary" href="privacy.html" data-language-href="privacy.html" data-i18n="privacyCTA">개인정보 처리방침 보기 →</a>
   </div>
 </section>
 
 <footer>
   <div class="links">
-    <a href="privacy.html">개인정보 처리방침</a>
-    <a href="https://github.com/jiunbae/stashbar/issues">지원</a>
+    <a href="privacy.html" data-language-href="privacy.html" data-i18n="footerPrivacy">개인정보 처리방침</a>
+    <a href="https://github.com/jiunbae/stashbar/issues" data-i18n="footerSupport">지원</a>
     <a href="https://github.com/jiunbae/stashbar">GitHub</a>
   </div>
   <div>© 2026 Jiun Bae · MIT License</div>

@@ -5,7 +5,11 @@
 <title>Privacy Policy — Stashbar</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Stashbar privacy policy — no data collection, no network, all local.">
+<link rel="canonical" href="https://jiun.dev/stashbar/privacy.html">
+<link rel="alternate" hreflang="ko" href="https://jiun.dev/stashbar/privacy.html?lang=ko">
+<link rel="alternate" hreflang="en" href="https://jiun.dev/stashbar/privacy.html?lang=en">
 <link rel="icon" href="assets/icon.png">
+<script src="assets/privacy-i18n.js" defer></script>
 <style>
   :root {
     color-scheme: light dark;
@@ -39,6 +43,32 @@
     max-width: 720px;
     margin: 0 auto;
     padding: 64px 24px 96px;
+  }
+  .language-switch {
+    display: flex;
+    width: max-content;
+    align-items: center;
+    gap: 2px;
+    margin: 0 0 24px auto;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .language-switch a {
+    min-width: 32px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .language-switch a:hover { color: var(--fg); text-decoration: none; }
+  .language-switch a[aria-current="page"] {
+    background: var(--accent);
+    color: #fff;
   }
   header {
     text-align: center;
@@ -113,52 +143,56 @@
 </head>
 <body>
 <main>
+  <nav class="language-switch" aria-label="Language" data-i18n-aria="languageLabel">
+    <a href="?lang=ko" data-language="ko">KO</a>
+    <a href="?lang=en" data-language="en">EN</a>
+  </nav>
   <header>
-    <a class="brand" href="./">
+    <a class="brand" href="./" data-language-home>
       <img src="assets/icon.png" alt="Stashbar">
       <span>Stashbar</span>
     </a>
-    <h1>Privacy Policy</h1>
-    <div class="effective">Effective Date: May 5, 2026</div>
+    <h1 data-i18n="heading">Privacy Policy</h1>
+    <div class="effective" data-i18n="effectiveDate">Effective Date: May 5, 2026</div>
   </header>
 
-  <div class="intro">
+  <div class="intro" data-i18n="intro">
     Stashbar is a menu bar utility for macOS designed with privacy as a core principle. This policy explains what data is handled and how it is protected.
   </div>
 
-  <h2>1. Data We Collect</h2>
-  <p>Stashbar does <strong>not</strong> collect personal data, analytics, or usage statistics.</p>
-  <p>The app accesses <strong>only</strong> the folders you explicitly select within the app. The paths of these selected folders are stored locally on your Mac as security-scoped bookmarks to maintain sandbox access across app launches. No file contents are ever read, transmitted, or stored outside of your device.</p>
+  <h2 data-i18n="section1Title">1. Data We Collect</h2>
+  <p data-i18n-html="section1Paragraph1">Stashbar does <strong>not</strong> collect personal data, analytics, or usage statistics.</p>
+  <p data-i18n-html="section1Paragraph2">The app accesses <strong>only</strong> the folders you explicitly select within the app. The paths of these selected folders are stored locally on your Mac as security-scoped bookmarks to maintain sandbox access across app launches. No file contents are ever read, transmitted, or stored outside of your device.</p>
 
-  <h2>2. How Data Is Used</h2>
-  <p>All stored folder paths are used <strong>solely</strong> to provide the app's core functionality: displaying and managing your selected folders from the menu bar.</p>
+  <h2 data-i18n="section2Title">2. How Data Is Used</h2>
+  <p data-i18n-html="section2Paragraph">All stored folder paths are used <strong>solely</strong> to provide the app's core functionality: displaying and managing your selected folders from the menu bar.</p>
   <ul>
-    <li><strong>Thumbnail Cache:</strong> The app may cache generated thumbnails locally in <code>~/Library/Caches/</code> to improve performance. This cache is stored on your device and is never transmitted.</li>
-    <li><strong>Launch at Login:</strong> If enabled, macOS manages this preference via <code>SMAppService</code>. No account or personal data is involved.</li>
+    <li data-i18n-html="thumbnailCache"><strong>Thumbnail Cache:</strong> The app may cache generated thumbnails locally in <code>~/Library/Caches/</code> to improve performance. This cache is stored on your device and is never transmitted.</li>
+    <li data-i18n-html="launchAtLogin"><strong>Launch at Login:</strong> If enabled, macOS manages this preference via <code>SMAppService</code>. No account or personal data is involved.</li>
   </ul>
 
-  <h2>3. Data Sharing</h2>
-  <p>Stashbar <strong>does not</strong> share any data with third parties. The app has no network connectivity and does not transmit any information off your device.</p>
+  <h2 data-i18n="section3Title">3. Data Sharing</h2>
+  <p data-i18n-html="section3Paragraph">Stashbar <strong>does not</strong> share any data with third parties. The app has no network connectivity and does not transmit any information off your device.</p>
 
-  <h2>4. Your Rights and Control</h2>
-  <p>You have full control over all folder access:</p>
+  <h2 data-i18n="section4Title">4. Your Rights and Control</h2>
+  <p data-i18n="section4Paragraph">You have full control over all folder access:</p>
   <ul>
-    <li>You choose which folders to add to Stashbar.</li>
-    <li>You may remove folders from Stashbar at any time, which immediately revokes the app's access to those folders.</li>
-    <li>You can uninstall Stashbar at any time via standard macOS methods, which removes all locally stored data including bookmarks and caches.</li>
+    <li data-i18n="control1">You choose which folders to add to Stashbar.</li>
+    <li data-i18n="control2">You may remove folders from Stashbar at any time, which immediately revokes the app's access to those folders.</li>
+    <li data-i18n="control3">You can uninstall Stashbar at any time via standard macOS methods, which removes all locally stored data including bookmarks and caches.</li>
   </ul>
 
-  <h2>5. Security</h2>
-  <p>Stashbar operates within the macOS app sandbox. Folder access is granted and persisted using Apple's security-scoped bookmark technology, ensuring access is limited to only the folders you explicitly authorize.</p>
+  <h2 data-i18n="section5Title">5. Security</h2>
+  <p data-i18n="section5Paragraph">Stashbar operates within the macOS app sandbox. Folder access is granted and persisted using Apple's security-scoped bookmark technology, ensuring access is limited to only the folders you explicitly authorize.</p>
 
-  <h2>6. Contact Information</h2>
-  <p>If you have any questions or concerns about this privacy policy or Stashbar's data practices, please contact us at:</p>
+  <h2 data-i18n="section6Title">6. Contact Information</h2>
+  <p data-i18n="section6Paragraph1">If you have any questions or concerns about this privacy policy or Stashbar's data practices, please contact us at:</p>
   <p><strong><a href="mailto:privacy@jiunbae.dev">privacy@jiunbae.dev</a></strong></p>
-  <p>We are committed to transparency and will respond to inquiries as promptly as possible.</p>
+  <p data-i18n="section6Paragraph2">We are committed to transparency and will respond to inquiries as promptly as possible.</p>
 
   <footer>
-    This privacy policy may be updated occasionally. Any changes will be posted here with an updated effective date.<br>
-    <a href="./">← Back to Stashbar</a> · <a href="https://github.com/jiunbae/stashbar">GitHub</a>
+    <span data-i18n="footerNote">This privacy policy may be updated occasionally. Any changes will be posted here with an updated effective date.</span><br>
+    <a href="./" data-language-home data-i18n="backToStashbar">← Back to Stashbar</a> · <a href="https://github.com/jiunbae/stashbar">GitHub</a>
   </footer>
 </main>
 </body>
