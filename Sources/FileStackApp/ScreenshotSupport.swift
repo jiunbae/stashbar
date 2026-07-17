@@ -71,10 +71,16 @@ enum ScreenshotScene: String, CaseIterable {
 }
 
 struct ScreenshotCaptureConfiguration {
+    enum Presentation: String {
+        case app
+        case store
+    }
+
     let fixtureRoot: URL
     let outputURL: URL
     let scene: ScreenshotScene
     let rendersOffscreen: Bool
+    let presentation: Presentation
 
     static func fromEnvironment() -> ScreenshotCaptureConfiguration? {
         let environment = ProcessInfo.processInfo.environment
@@ -94,7 +100,10 @@ struct ScreenshotCaptureConfiguration {
             fixtureRoot: URL(fileURLWithPath: fixturePath),
             outputURL: URL(fileURLWithPath: outputPath),
             scene: scene,
-            rendersOffscreen: environment["FILE_STACK_SCREENSHOT_RENDERER"] != "display"
+            rendersOffscreen: environment["FILE_STACK_SCREENSHOT_RENDERER"] != "display",
+            presentation: Presentation(
+                rawValue: environment["FILE_STACK_SCREENSHOT_PRESENTATION"] ?? "store"
+            ) ?? .store
         )
     }
 }
@@ -210,12 +219,24 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             let contentImage = try renderViewAtHighResolution(hostingView)
-            let canvasImage = renderScreenshotCanvas(contentImage: contentImage)
-            try savePNG(
-                image: canvasImage,
-                to: configuration.outputURL,
-                pixelSize: NSSize(width: 2560, height: 1600)
-            )
+            switch configuration.presentation {
+            case .app:
+                // Website captures are the app itself at its native 6:7 ratio.
+                // Marketing canvases must never be reused here: their landscape
+                // padding makes the product look tiny even when the CSS is correct.
+                try savePNG(
+                    image: contentImage,
+                    to: configuration.outputURL,
+                    pixelSize: NSSize(width: 1080, height: 1260)
+                )
+            case .store:
+                let canvasImage = renderScreenshotCanvas(contentImage: contentImage)
+                try savePNG(
+                    image: canvasImage,
+                    to: configuration.outputURL,
+                    pixelSize: NSSize(width: 2560, height: 1600)
+                )
+            }
         } catch {
             fputs("error: failed to render offscreen screenshot - \(error)\n", stderr)
         }

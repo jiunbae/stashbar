@@ -144,38 +144,55 @@
   .hero-preview {
     position: relative;
     min-width: 0;
+    display: flex;
+    justify-content: center;
+    isolation: isolate;
   }
   .hero-preview::before {
     content: "";
     position: absolute;
     z-index: -1;
-    inset: 10% 5% 2%;
+    inset: 9% 2% 5%;
     border-radius: 50%;
     background: linear-gradient(135deg, rgba(85,127,148,0.42), rgba(213,166,95,0.22));
     filter: blur(68px);
-    opacity: 0.62;
+    opacity: 0.7;
   }
-  .hero-preview-frame {
+  .hero-preview-stage {
     position: relative;
-    aspect-ratio: 16 / 10;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-    border-radius: 22px;
-    background: #edf0ed;
-    box-shadow: 0 4px 10px rgba(23,37,45,0.08), 0 34px 80px rgba(23,37,45,0.18);
+    width: min(100%, 610px);
+    height: 560px;
   }
-  .hero-preview-frame::after {
-    content: "";
+  .hero-shot {
     position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
-  }
-  .hero-preview-frame img {
-    width: 100%;
-    height: auto;
     display: block;
+    width: min(62%, 370px);
+    height: auto;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 22px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7), 0 3px 9px rgba(23,37,45,0.12), 0 34px 76px rgba(23,37,45,0.26);
+  }
+  .hero-shot-primary {
+    z-index: 3;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .hero-shot-secondary {
+    z-index: 1;
+    top: 68px;
+    width: min(52%, 310px);
+    opacity: 0.78;
+    filter: saturate(0.88) brightness(0.94);
+  }
+  .hero-shot-left {
+    left: 1%;
+    transform: rotate(-4deg);
+  }
+  .hero-shot-right {
+    right: 1%;
+    transform: rotate(4deg);
   }
   .hero-copy {
     min-width: 0;
@@ -360,25 +377,33 @@
   /* Screenshots */
   .screenshots {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px;
   }
   .screenshot {
-    border-radius: 14px;
-    overflow: hidden;
+    margin: 0;
+    min-width: 0;
+  }
+  .screenshot-visual {
+    padding: clamp(18px, 3vw, 30px);
     border: 1px solid var(--border);
+    border-radius: 24px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 18%, var(--bg-elevated)), var(--bg-elevated));
     box-shadow: var(--shadow);
-    background: var(--bg-elevated);
   }
   .screenshot img {
     width: 100%;
+    height: auto;
+    aspect-ratio: auto;
     display: block;
+    border: 0;
+    border-radius: 18px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72), 0 2px 7px rgba(23,37,45,0.1), 0 24px 52px rgba(23,37,45,0.18);
   }
   .screenshot figcaption {
-    padding: 16px 20px 18px;
+    padding: 15px 4px 0;
     font-size: 0.92rem;
     color: var(--fg-soft);
-    border-top: 1px solid var(--border);
   }
 
   /* Privacy callout */
@@ -438,7 +463,20 @@
   @media (max-width: 640px) {
     .hero { padding: 26px 18px 54px; }
     .hero-inner { grid-template-columns: 1fr; gap: 36px; }
-    .hero-preview-frame { aspect-ratio: 16 / 10; border-radius: 18px; }
+    .hero-preview-stage {
+      width: 100%;
+      height: auto;
+      display: flex;
+      justify-content: center;
+    }
+    .hero-shot-primary {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: min(78vw, 350px);
+      transform: none;
+    }
+    .hero-shot-secondary { display: none; }
     .hero img.app-icon { width: 46px; height: 46px; border-radius: 12px; }
     .hero-identity { margin-bottom: 19px; }
     .hero h1 { font-size: clamp(2.45rem, 12vw, 3.5rem); }
@@ -447,6 +485,8 @@
     .cta { justify-content: center; }
     section { padding: 64px 20px; }
     .screenshots { grid-template-columns: 1fr; }
+    .screenshot-visual { padding: 14px; border-radius: 20px; }
+    .screenshot img { border-radius: 15px; }
     .nav-inner { padding-inline: 18px; }
     .nav-links { display: none; }
     .nav-actions { gap: 0; }
@@ -458,6 +498,7 @@
       max-width: 720px;
     }
     .hero-copy { max-width: 650px; }
+    .hero-preview-stage { height: 590px; }
   }
   @media (max-width: 940px) {
     .hero-preview { order: 1; }
@@ -520,8 +561,10 @@
       </div>
     </div>
     <div class="hero-preview">
-      <div class="hero-preview-frame">
-        <img src="assets/screenshots/01-icon-grid.png" alt="Stashbar에서 Screenshots 폴더의 최근 파일을 아이콘 보기로 표시한 메뉴바 팝오버" width="2560" height="1600" fetchpriority="high">
+      <div class="hero-preview-stage">
+        <img class="hero-shot hero-shot-secondary hero-shot-left" src="assets/screenshots/02-folder-switching.png" alt="" width="1080" height="1260" aria-hidden="true">
+        <img class="hero-shot hero-shot-primary" src="assets/screenshots/01-icon-grid.png" alt="Stashbar에서 Screenshots 폴더의 최근 파일을 아이콘 보기로 표시한 메뉴바 팝오버" width="1080" height="1260" fetchpriority="high">
+        <img class="hero-shot hero-shot-secondary hero-shot-right" src="assets/screenshots/03-list-view.png" alt="" width="1080" height="1260" aria-hidden="true">
       </div>
     </div>
   </div>
@@ -535,19 +578,19 @@
   </div>
   <div class="screenshots">
     <figure class="screenshot">
-      <img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <div class="screenshot-visual"><img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
       <figcaption>아이콘 보기 — 썸네일로 한눈에 파악</figcaption>
     </figure>
     <figure class="screenshot">
-      <img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환" width="2560" height="1600" loading="lazy" decoding="async">
+      <div class="screenshot-visual"><img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환" width="1080" height="1260" loading="lazy" decoding="async"></div>
       <figcaption>다중 폴더 — 드롭다운으로 즉시 전환</figcaption>
     </figure>
     <figure class="screenshot">
-      <img src="assets/screenshots/03-list-view.png" alt="목록 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <div class="screenshot-visual"><img src="assets/screenshots/03-list-view.png" alt="목록 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
       <figcaption>목록 보기 — 정렬과 메타데이터 한눈에</figcaption>
     </figure>
     <figure class="screenshot">
-      <img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <div class="screenshot-visual"><img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기" width="1080" height="1260" loading="lazy" decoding="async"></div>
       <figcaption>계층 보기 — 하위 폴더까지 펼쳐서</figcaption>
     </figure>
   </div>

@@ -86,23 +86,36 @@ outputs=(
     "03-live-list-view.png"
     "04-live-hierarchy-view.png"
 )
+docs_outputs=(
+    "01-icon-grid.png"
+    "02-folder-switching.png"
+    "03-list-view.png"
+    "04-hierarchy-view.png"
+)
 
 for index in "${!scenes[@]}"; do
     scene="${scenes[$index]}"
     output="${OUTPUT_DIR}/${outputs[$index]}"
+    docs_output="${DOCS_SCREENSHOT_DIR}/${docs_outputs[$index]}"
     rm -f "${output}"
+    rm -f "${docs_output}"
 
     FILE_STACK_SCREENSHOT_MODE=1 \
     FILE_STACK_SCREENSHOT_RENDERER=offscreen \
+    FILE_STACK_SCREENSHOT_PRESENTATION=store \
     FILE_STACK_SCREENSHOT_FIXTURE_ROOT="${FIXTURE_ROOT}" \
     FILE_STACK_SCREENSHOT_SCENE="${scene}" \
     FILE_STACK_SCREENSHOT_OUTPUT_PATH="${output}" \
     "${EXECUTABLE_PATH}" -AppleLanguages "(ko)" -AppleLocale "ko_KR"
+
+    FILE_STACK_SCREENSHOT_MODE=1 \
+    FILE_STACK_SCREENSHOT_RENDERER=offscreen \
+    FILE_STACK_SCREENSHOT_PRESENTATION=app \
+    FILE_STACK_SCREENSHOT_FIXTURE_ROOT="${FIXTURE_ROOT}" \
+    FILE_STACK_SCREENSHOT_SCENE="${scene}" \
+    FILE_STACK_SCREENSHOT_OUTPUT_PATH="${docs_output}" \
+    "${EXECUTABLE_PATH}" -AppleLanguages "(ko)" -AppleLocale "ko_KR"
 done
 
-cp "${OUTPUT_DIR}/01-live-icon-grid.png" "${DOCS_SCREENSHOT_DIR}/01-icon-grid.png"
-cp "${OUTPUT_DIR}/02-live-folder-switching.png" "${DOCS_SCREENSHOT_DIR}/02-folder-switching.png"
-cp "${OUTPUT_DIR}/03-live-list-view.png" "${DOCS_SCREENSHOT_DIR}/03-list-view.png"
-cp "${OUTPUT_DIR}/04-live-hierarchy-view.png" "${DOCS_SCREENSHOT_DIR}/04-hierarchy-view.png"
-
-echo "Generated real screenshots in ${OUTPUT_DIR} and ${DOCS_SCREENSHOT_DIR}"
+echo "Generated 16:10 store captures in ${OUTPUT_DIR}"
+echo "Generated native-ratio website captures in ${DOCS_SCREENSHOT_DIR}"
