@@ -6,12 +6,14 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 FIXTURE_ROOT="${FILE_STACK_SCREENSHOT_FIXTURE_ROOT:-/Users/Shared/Stashbar}"
 OUTPUT_DIR="${FILE_STACK_SCREENSHOT_OUTPUT_DIR:-${PROJECT_ROOT}/AppStore/screenshots-live/mac/ko-KR}"
+DOCS_SCREENSHOT_DIR="${PROJECT_ROOT}/docs/assets/screenshots"
 EXECUTABLE_PATH="${PROJECT_ROOT}/.build/release/FileStackApp"
 CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-/private/tmp/file-stack-swift-module-cache}"
 export CLANG_MODULE_CACHE_PATH
 
 mkdir -p "${FIXTURE_ROOT}/Screenshots" "${FIXTURE_ROOT}/Downloads" "${FIXTURE_ROOT}/Workspace/Assets" "${FIXTURE_ROOT}/Workspace/Archive"
 mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${DOCS_SCREENSHOT_DIR}"
 mkdir -p "${CLANG_MODULE_CACHE_PATH}"
 
 create_text_file() {
@@ -91,10 +93,16 @@ for index in "${!scenes[@]}"; do
     rm -f "${output}"
 
     FILE_STACK_SCREENSHOT_MODE=1 \
+    FILE_STACK_SCREENSHOT_RENDERER=offscreen \
     FILE_STACK_SCREENSHOT_FIXTURE_ROOT="${FIXTURE_ROOT}" \
     FILE_STACK_SCREENSHOT_SCENE="${scene}" \
     FILE_STACK_SCREENSHOT_OUTPUT_PATH="${output}" \
     "${EXECUTABLE_PATH}" -AppleLanguages "(ko)" -AppleLocale "ko_KR"
 done
 
-echo "Generated real screenshots in ${OUTPUT_DIR}"
+cp "${OUTPUT_DIR}/01-live-icon-grid.png" "${DOCS_SCREENSHOT_DIR}/01-icon-grid.png"
+cp "${OUTPUT_DIR}/02-live-folder-switching.png" "${DOCS_SCREENSHOT_DIR}/02-folder-switching.png"
+cp "${OUTPUT_DIR}/03-live-list-view.png" "${DOCS_SCREENSHOT_DIR}/03-list-view.png"
+cp "${OUTPUT_DIR}/04-live-hierarchy-view.png" "${DOCS_SCREENSHOT_DIR}/04-hierarchy-view.png"
+
+echo "Generated real screenshots in ${OUTPUT_DIR} and ${DOCS_SCREENSHOT_DIR}"

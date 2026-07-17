@@ -74,6 +74,7 @@ struct ScreenshotCaptureConfiguration {
     let fixtureRoot: URL
     let outputURL: URL
     let scene: ScreenshotScene
+    let rendersOffscreen: Bool
 
     static func fromEnvironment() -> ScreenshotCaptureConfiguration? {
         let environment = ProcessInfo.processInfo.environment
@@ -92,7 +93,8 @@ struct ScreenshotCaptureConfiguration {
         return ScreenshotCaptureConfiguration(
             fixtureRoot: URL(fileURLWithPath: fixturePath),
             outputURL: URL(fileURLWithPath: outputPath),
-            scene: scene
+            scene: scene,
+            rendersOffscreen: environment["FILE_STACK_SCREENSHOT_RENDERER"] != "display"
         )
     }
 }
@@ -103,6 +105,8 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private var statusItem: NSStatusItem?
     private var backdropWindows: [NSWindow] = []
+    private var offscreenHostingView: NSHostingView<ContentView>?
+    private var offscreenWindow: NSWindow?
     /// Invisible view at the screen's top-center that the popover anchors to, so
     /// the popover (and its arrow) render centered instead of under the status
     /// item at the right edge of the menu bar.
@@ -129,12 +133,14 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
             selectedDisplayNames: descriptor.selectedDisplayNames
         )
 
+        if configuration.rendersOffscreen {
+            prepareOffscreenCapture()
+            return
+        }
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem?.button {
-            let statusImage = NSImage(systemSymbolName: "tray.full.fill", accessibilityDescription: "Stashbar")
-                ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "Stashbar")
-            statusImage?.isTemplate = true
-            button.image = statusImage
+            button.image = StashbarBrand.statusItemImage()
             button.appearance = NSAppearance(named: .aqua)
         }
 
@@ -157,6 +163,136 @@ final class ScreenshotAppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             self?.showPopoverAndCapture()
         }
+    }
+
+    private func prepareOffscreenCapture() {
+        controller.setInterfaceActive(true)
+
+        let contentSize = NSSize(width: 360, height: 420)
+        let hostingView = NSHostingView(rootView: ContentView(controller: controller))
+        hostingView.appearance = NSAppearance(named: .aqua)
+        hostingView.frame = NSRect(origin: .zero, size: contentSize)
+
+        // Attach the hosting view to a retained (but never ordered) AppKit window.
+        // SwiftUI List/OutlineGroup and representable-backed controls otherwise do
+        // not finish their lifecycle when rendered in a detached view hierarchy.
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: contentSize),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = hostingView
+        offscreenWindow = window
+
+        hostingView.layoutSubtreeIfNeeded()
+        offscreenHostingView = hostingView
+
+        // Thumbnail generation and AppKit representable updates are asynchronous.
+        // Keep the real view alive through a few main-run-loop turns before caching it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.captureOffscreenAndTerminate()
+        }
+    }
+
+    private func captureOffscreenAndTerminate() {
+        defer { NSApp.terminate(nil) }
+
+        guard let hostingView = offscreenHostingView else {
+            fputs("error: offscreen screenshot view was released\n", stderr)
+            return
+        }
+
+        hostingView.layoutSubtreeIfNeeded()
+        hostingView.displayIfNeeded()
+
+        do {
+            let contentImage = try renderViewAtHighResolution(hostingView)
+            let canvasImage = renderScreenshotCanvas(contentImage: contentImage)
+            try savePNG(
+                image: canvasImage,
+                to: configuration.outputURL,
+                pixelSize: NSSize(width: 2560, height: 1600)
+            )
+        } catch {
+            fputs("error: failed to render offscreen screenshot - \(error)\n", stderr)
+        }
+    }
+
+    private func renderViewAtHighResolution(_ view: NSView) throws -> NSImage {
+        let pointSize = view.bounds.size
+        let renderScale: CGFloat = 3
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(pointSize.width * renderScale),
+            pixelsHigh: Int(pointSize.height * renderScale),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bitmapFormat: [],
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else {
+            throw NSError(domain: "ScreenshotCapture", code: 4)
+        }
+
+        bitmap.size = pointSize
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+
+        let image = NSImage(size: pointSize)
+        image.addRepresentation(bitmap)
+        return image
+    }
+
+    private func renderScreenshotCanvas(contentImage: NSImage) -> NSImage {
+        let canvasSize = NSSize(width: 2560, height: 1600)
+        let canvas = NSImage(size: canvasSize)
+        canvas.lockFocus()
+
+        let canvasRect = NSRect(origin: .zero, size: canvasSize)
+        let topColor = NSColor(srgbRed: 0.975, green: 0.978, blue: 0.972, alpha: 1)
+        let bottomColor = NSColor(srgbRed: 0.875, green: 0.902, blue: 0.91, alpha: 1)
+        NSGradient(starting: topColor, ending: bottomColor)?.draw(in: canvasRect, angle: -90)
+
+        // Preserve ContentView's native 6:7 aspect ratio exactly. The final panel
+        // is large enough to show current controls clearly without interpolation blur.
+        let panelHeight: CGFloat = 1344
+        let panelWidth = panelHeight * (360.0 / 420.0)
+        let panelRect = NSRect(
+            x: (canvasSize.width - panelWidth) / 2,
+            y: (canvasSize.height - panelHeight) / 2,
+            width: panelWidth,
+            height: panelHeight
+        )
+        let panelPath = NSBezierPath(roundedRect: panelRect, xRadius: 44, yRadius: 44)
+
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.22)
+        shadow.shadowBlurRadius = 52
+        shadow.shadowOffset = NSSize(width: 0, height: -24)
+        NSGraphicsContext.current?.saveGraphicsState()
+        shadow.set()
+        NSColor.windowBackgroundColor.setFill()
+        panelPath.fill()
+        NSGraphicsContext.current?.restoreGraphicsState()
+
+        NSGraphicsContext.current?.saveGraphicsState()
+        panelPath.addClip()
+        NSGraphicsContext.current?.imageInterpolation = .high
+        contentImage.draw(
+            in: panelRect,
+            from: NSRect(origin: .zero, size: contentImage.size),
+            operation: .sourceOver,
+            fraction: 1
+        )
+        NSGraphicsContext.current?.restoreGraphicsState()
+
+        canvas.unlockFocus()
+        return canvas
     }
 
     private func showPopoverAndCapture() {
