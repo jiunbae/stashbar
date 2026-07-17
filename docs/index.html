@@ -72,7 +72,7 @@
     border-bottom: 1px solid var(--border);
   }
   .nav-inner {
-    max-width: 1080px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 12px 24px;
     display: flex;
@@ -105,46 +105,151 @@
     color: var(--fg-soft);
     font-weight: 500;
   }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+  .nav-store {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--accent-strong);
+    color: var(--on-accent);
+    font-size: 0.84rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .nav-store:hover {
+    text-decoration: none;
+    box-shadow: 0 7px 18px color-mix(in srgb, var(--accent-strong) 24%, transparent);
+  }
 
   /* Hero */
   .hero {
     background: var(--hero-gradient);
-    padding: 96px 24px 64px;
-    text-align: center;
+    padding: 62px 24px 76px;
     overflow: hidden;
   }
   .hero-inner {
-    max-width: 920px;
+    max-width: 1180px;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+    align-items: center;
+    gap: clamp(44px, 6vw, 82px);
+  }
+  .hero-preview {
+    min-width: 0;
+  }
+  .hero-preview-frame {
+    position: relative;
+    aspect-ratio: 1.08;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    border-radius: 28px;
+    background: #edf0ed;
+    box-shadow: 0 4px 10px rgba(23,37,45,0.08), 0 34px 80px rgba(23,37,45,0.18);
+  }
+  .hero-preview-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+  }
+  .hero-preview-frame img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+  }
+  .live-label {
+    position: absolute;
+    z-index: 1;
+    top: 18px;
+    left: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+    border: 1px solid rgba(255,255,255,0.62);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.76);
+    color: #31505e;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.035em;
+    box-shadow: 0 4px 16px rgba(23,37,45,0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .live-label::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4c9b72;
+    box-shadow: 0 0 0 3px rgba(76,155,114,0.14);
+  }
+  .hero-copy {
+    min-width: 0;
+  }
+  .hero-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
   }
   .hero img.app-icon {
-    width: 112px;
-    height: 112px;
-    border-radius: 25px;
-    filter: drop-shadow(0 18px 26px rgba(23,37,45,0.16));
-    margin-bottom: 24px;
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+    filter: drop-shadow(0 10px 15px rgba(23,37,45,0.14));
+  }
+  .hero-product-name {
+    font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 1.06rem;
+    font-weight: 720;
+    letter-spacing: -0.025em;
+  }
+  .hero-kicker {
+    display: block;
+    margin-top: 1px;
+    color: var(--muted);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .hero h1 {
     font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-size: clamp(2.65rem, 4.4vw, 4.25rem);
     font-weight: 760;
-    letter-spacing: -0.045em;
-    line-height: 1.1;
-    margin: 0 0 16px;
+    letter-spacing: -0.055em;
+    line-height: 1.04;
+    margin: 0 0 22px;
+    text-wrap: balance;
   }
   .hero .tagline {
-    font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+    font-size: clamp(1.03rem, 1.65vw, 1.2rem);
     color: var(--fg-soft);
-    max-width: 620px;
-    margin: 0 auto 32px;
+    max-width: 500px;
+    margin: 0 0 30px;
     font-weight: 400;
   }
   .cta-row {
     display: flex;
     gap: 12px;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
-    margin-bottom: 56px;
+    margin-bottom: 28px;
   }
   .cta {
     display: inline-flex;
@@ -169,23 +274,27 @@
     color: var(--fg);
     border: 1px solid var(--border);
   }
-  .cta .badge {
-    font-size: 0.75rem;
-    background: var(--accent-soft);
-    color: var(--accent);
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-weight: 600;
+  .hero-facts {
+    display: flex;
+    align-items: center;
+    gap: 10px 18px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 550;
   }
-  .hero-screenshot {
-    margin: 0 auto;
-    max-width: 980px;
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    border: 1px solid var(--border);
+  .hero-facts span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
   }
-  .hero-screenshot img { width: 100%; display: block; }
+  .hero-facts span::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--signal);
+  }
 
   /* Sections */
   section {
@@ -347,13 +456,33 @@
   footer .links a { color: var(--fg-soft); }
 
   @media (max-width: 640px) {
-    .hero { padding: 72px 20px 48px; }
-    .hero img.app-icon { width: 88px; height: 88px; border-radius: 20px; }
+    .hero { padding: 26px 18px 54px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 36px; }
+    .hero-preview-frame { aspect-ratio: 0.96; border-radius: 22px; }
+    .live-label { top: 14px; left: 14px; }
+    .hero img.app-icon { width: 46px; height: 46px; border-radius: 12px; }
+    .hero-identity { margin-bottom: 19px; }
+    .hero h1 { font-size: clamp(2.45rem, 12vw, 3.5rem); }
+    .hero .tagline { margin-bottom: 24px; }
+    .cta-row { margin-bottom: 22px; }
+    .cta { justify-content: center; }
     section { padding: 64px 20px; }
     .screenshots { grid-template-columns: 1fr; }
     .nav-inner { padding-inline: 18px; }
-    .nav-links { gap: 16px; }
-    .nav-links a:nth-child(-n+2) { display: none; }
+    .nav-links { display: none; }
+    .nav-actions { gap: 0; }
+    .nav-store { padding-inline: 13px; }
+  }
+  @media (min-width: 641px) and (max-width: 940px) {
+    .hero-inner {
+      grid-template-columns: 1fr;
+      max-width: 720px;
+    }
+    .hero-copy { max-width: 650px; }
+  }
+  @media (max-width: 940px) {
+    .hero-preview { order: 1; }
+    .hero-copy { order: 2; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -371,35 +500,80 @@
       <img class="brand-mark" src="assets/brand-mark.svg" alt="">
       Stashbar
     </a>
-    <div class="nav-links">
-      <a href="#features">기능</a>
-      <a href="#screenshots">스크린샷</a>
-      <a href="privacy.html">개인정보</a>
-      <a href="https://github.com/jiunbae/stashbar">GitHub</a>
+    <div class="nav-actions">
+      <div class="nav-links">
+        <a href="#screenshots">실제 화면</a>
+        <a href="#features">기능</a>
+        <a href="privacy.html">개인정보</a>
+        <a href="https://github.com/jiunbae/stashbar">GitHub</a>
+      </div>
+      <a class="nav-store" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">App Store</a>
     </div>
   </div>
 </nav>
 
 <header class="hero">
   <div class="hero-inner">
-    <img class="app-icon" src="assets/icon.png" alt="Stashbar 아이콘">
-    <h1>메뉴바의<br>최근 파일</h1>
-    <p class="tagline">
-      자주 보는 폴더를 메뉴바에 고정하고, 최근 파일을 한눈에 — Finder를 앞에 두지 않아도 됩니다.
-    </p>
-    <div class="cta-row">
-      <a class="cta primary" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">
-        <span>Mac App Store에서 받기</span>
-      </a>
-      <a class="cta secondary" href="https://github.com/jiunbae/stashbar" aria-label="GitHub에서 보기">
-        <span>GitHub에서 보기</span>
-      </a>
+    <div class="hero-preview">
+      <div class="hero-preview-frame">
+        <span class="live-label">실제 앱 화면</span>
+        <img src="assets/hero-app.png" alt="Stashbar에서 Screenshots 폴더의 최근 파일을 아이콘 보기로 표시한 실제 메뉴바 팝오버" width="1500" height="1400" fetchpriority="high">
+      </div>
     </div>
-    <div class="hero-screenshot">
-      <img src="assets/hero.png" alt="Stashbar 메뉴바 popover">
+    <div class="hero-copy">
+      <div class="hero-identity">
+        <img class="app-icon" src="assets/icon.png" alt="">
+        <div>
+          <div class="hero-product-name">Stashbar</div>
+          <span class="hero-kicker">macOS menu bar utility</span>
+        </div>
+      </div>
+      <h1>최근 파일은<br>Finder보다 가까이.</h1>
+      <p class="tagline">
+        자주 보는 폴더를 메뉴바에 고정하세요. 최신 파일을 확인하고, 미리 보고, 필요한 작업까지 한곳에서 이어갑니다.
+      </p>
+      <div class="cta-row">
+        <a class="cta primary" href="https://apps.apple.com/app/stashbar/id6766173419?mt=12" aria-label="Mac App Store에서 Stashbar 받기">
+          <span>Mac App Store에서 받기</span>
+        </a>
+        <a class="cta secondary" href="#screenshots">
+          <span>실제 화면 더 보기</span>
+        </a>
+      </div>
+      <div class="hero-facts" aria-label="Stashbar 주요 정보">
+        <span>무료</span>
+        <span>메뉴바 전용</span>
+        <span>데이터 수집 없음</span>
+      </div>
     </div>
   </div>
 </header>
+
+<section id="screenshots">
+  <div class="section-header">
+    <div class="eyebrow">실제 화면</div>
+    <h2>말보다 화면이 먼저</h2>
+    <p>아이콘, 목록, 계층 보기까지 실제 메뉴바 팝오버에서 그대로 동작합니다.</p>
+  </div>
+  <div class="screenshots">
+    <figure class="screenshot">
+      <img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <figcaption>아이콘 보기 — 썸네일로 한눈에 파악</figcaption>
+    </figure>
+    <figure class="screenshot">
+      <img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환" width="2560" height="1600" loading="lazy" decoding="async">
+      <figcaption>다중 폴더 — 드롭다운으로 즉시 전환</figcaption>
+    </figure>
+    <figure class="screenshot">
+      <img src="assets/screenshots/03-list-view.png" alt="목록 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <figcaption>목록 보기 — 정렬과 메타데이터 한눈에</figcaption>
+    </figure>
+    <figure class="screenshot">
+      <img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기" width="2560" height="1600" loading="lazy" decoding="async">
+      <figcaption>계층 보기 — 하위 폴더까지 펼쳐서</figcaption>
+    </figure>
+  </div>
+</section>
 
 <section id="features">
   <div class="section-header">
@@ -448,32 +622,6 @@
       <h3>App Sandbox 호환</h3>
       <p>Security-scoped bookmark로 사용자가 선택한 폴더 접근만 안전하게 영속화합니다.</p>
     </div>
-  </div>
-</section>
-
-<section id="screenshots">
-  <div class="section-header">
-    <div class="eyebrow">스크린샷</div>
-    <h2>실제 동작 화면</h2>
-    <p>메뉴바에서 한 번의 클릭으로 닿는 거리에.</p>
-  </div>
-  <div class="screenshots">
-    <figure class="screenshot">
-      <img src="assets/screenshots/01-icon-grid.png" alt="아이콘 그리드 보기">
-      <figcaption>아이콘 보기 — 썸네일로 한눈에 파악</figcaption>
-    </figure>
-    <figure class="screenshot">
-      <img src="assets/screenshots/02-folder-switching.png" alt="다중 폴더 전환">
-      <figcaption>다중 폴더 — 드롭다운으로 즉시 전환</figcaption>
-    </figure>
-    <figure class="screenshot">
-      <img src="assets/screenshots/03-list-view.png" alt="목록 보기">
-      <figcaption>목록 보기 — 정렬과 메타데이터 한눈에</figcaption>
-    </figure>
-    <figure class="screenshot">
-      <img src="assets/screenshots/04-hierarchy-view.png" alt="계층 보기">
-      <figcaption>계층 보기 — 하위 폴더까지 펼쳐서</figcaption>
-    </figure>
   </div>
 </section>
 
