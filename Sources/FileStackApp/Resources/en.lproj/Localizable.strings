@@ -91,10 +91,10 @@
 
 /* MARK: - Support / Tips (SettingsView.swift, TipJar.swift) */
 "settings.section.support" = "Support Development";
-"settings.support.blurb" = "If you enjoy Stashbar, you can support its development. It's purely a tip — nothing is unlocked.";
+"settings.support.blurb" = "Choose one level for a one-time contribution. Nothing is unlocked, and we won't ask you to contribute again.";
 "settings.support.loading" = "Loading tips…";
 "settings.support.unavailable" = "Tips are unavailable right now.";
-"settings.support.thanks" = "Thank you for your support!";
+"settings.support.thanks" = "Thank you for supporting Stashbar! We won't ask you again.";
 "tip.error.unverified" = "The purchase could not be verified.";
 
 /* MARK: - Status Menu (main.swift) */

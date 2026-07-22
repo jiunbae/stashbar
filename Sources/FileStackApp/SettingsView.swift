@@ -119,11 +119,17 @@ struct SettingsView: View {
                 }
 
                 Section(NSLocalizedString("settings.section.support", comment: "Support development section")) {
-                    Text(NSLocalizedString("settings.support.blurb", comment: "Support blurb"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if tipJar.hasSupported {
+                        Label(NSLocalizedString("settings.support.thanks", comment: "Thank you message"), systemImage: "heart.fill")
+                            .font(.callout)
+                            .foregroundStyle(.pink)
+                    } else {
+                        Text(NSLocalizedString("settings.support.blurb", comment: "Support blurb"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                    if tipJar.products.isEmpty {
+                    if !tipJar.hasSupported && tipJar.products.isEmpty {
                         HStack(spacing: 8) {
                             if tipJar.isLoading {
                                 ProgressView().controlSize(.small)
@@ -132,7 +138,7 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                    } else {
+                    } else if !tipJar.hasSupported {
                         ForEach(tipJar.products, id: \.id) { product in
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -155,12 +161,6 @@ struct SettingsView: View {
                                 .disabled(tipJar.purchasingProductID != nil)
                             }
                         }
-                    }
-
-                    if tipJar.thankedProductID != nil {
-                        Label(NSLocalizedString("settings.support.thanks", comment: "Thank you message"), systemImage: "heart.fill")
-                            .font(.callout)
-                            .foregroundStyle(.pink)
                     }
                 }
             }

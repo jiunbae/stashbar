@@ -1,31 +1,59 @@
 import Foundation
 import StoreKit
 
-/// StoreKit 2 tip jar. Three consumable products let users leave an optional
-/// tip to support development. Tips grant nothing — the transaction is finished
-/// immediately after purchase; there is no entitlement to unlock or restore.
+/// StoreKit 2 support purchase manager. A customer chooses one support level,
+/// and any verified purchase permanently hides every support option.
 @MainActor
 final class TipJar: ObservableObject {
-    /// Product identifiers configured in App Store Connect (consumables).
-    /// Brand-based IDs (independent of the bundle id, which is allowed).
+    /// Non-consumable product identifiers configured in App Store Connect.
     static let productIDs = [
+        "com.stashbar.support.espresso",
+        "com.stashbar.support.latte",
+        "com.stashbar.support.dessert"
+    ]
+
+    /// The original products shipped as consumables. They remain here only so
+    /// existing supporters are migrated and never asked to purchase again.
+    static let legacyProductIDs = [
         "com.stashbar.tip.espresso",
         "com.stashbar.tip.latte",
         "com.stashbar.tip.dessert"
     ]
 
+    private static let recognizedProductIDs = Set(productIDs + legacyProductIDs)
+
     @Published private(set) var products: [Product] = []
     @Published private(set) var isLoading = false
-    /// The id of the most recently tipped product, used to show a thank-you note.
-    @Published var thankedProductID: String?
+    @Published private(set) var hasSupported = false
     @Published var errorMessage: String?
     /// The product currently being purchased, to show per-row progress.
     @Published var purchasingProductID: String?
+    private var transactionUpdatesTask: Task<Void, Never>?
+
+    init() {
+        transactionUpdatesTask = Task { [weak self] in
+            for await result in Transaction.updates {
+                guard let self else { return }
+                await self.handleTransactionUpdate(result)
+            }
+        }
+    }
+
+    deinit {
+        transactionUpdatesTask?.cancel()
+    }
 
     func loadProducts() async {
-        guard products.isEmpty, !isLoading else { return }
+        guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
+
+        await refreshSupportStatus()
+        guard !hasSupported else {
+            products = []
+            return
+        }
+
         do {
             let loaded = try await Product.products(for: Self.productIDs)
             products = loaded.sorted { $0.price < $1.price }
@@ -43,9 +71,13 @@ final class TipJar: ObservableObject {
             switch result {
             case .success(let verification):
                 if case .verified(let transaction) = verification {
-                    // Consumable: nothing to unlock — just finish the transaction.
+                    guard Self.productIDs.contains(transaction.productID) else { return }
+
+                    // A single support purchase completes the tip jar for this
+                    // customer, regardless of which price level they chose.
+                    hasSupported = true
+                    products = []
                     await transaction.finish()
-                    thankedProductID = product.id
                 } else {
                     errorMessage = NSLocalizedString("tip.error.unverified", comment: "Unverified purchase")
                 }
@@ -58,6 +90,46 @@ final class TipJar: ObservableObject {
             }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshSupportStatus() async {
+        var foundPurchase = false
+
+        // Transaction.all includes the new non-consumables. The app bundle also
+        // opts into consumable history so previous tip purchases can migrate.
+        for await result in Transaction.all {
+            guard case .verified(let transaction) = result,
+                  Self.recognizedProductIDs.contains(transaction.productID),
+                  transaction.revocationDate == nil else {
+                continue
+            }
+
+            foundPurchase = true
+            break
+        }
+
+        hasSupported = foundPurchase
+        if foundPurchase {
+            products = []
+        }
+    }
+
+    private func handleTransactionUpdate(_ result: VerificationResult<Transaction>) async {
+        guard case .verified(let transaction) = result,
+              Self.recognizedProductIDs.contains(transaction.productID) else {
+            return
+        }
+
+        if transaction.revocationDate == nil {
+            hasSupported = true
+            products = []
+            await transaction.finish()
+        } else {
+            await refreshSupportStatus()
+            if !hasSupported {
+                await loadProducts()
+            }
         }
     }
 }

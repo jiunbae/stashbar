@@ -75,6 +75,10 @@ cat >"${APP_BUNDLE_PATH}/Contents/Info.plist" <<EOF
     <string>NSApplication</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <!-- Include legacy consumable transactions only to recognize customers who
+         already supported Stashbar before tips became non-consumable. -->
+    <key>SKIncludeConsumableInAppPurchaseHistory</key>
+    <true/>
 </dict>
 </plist>
 EOF
